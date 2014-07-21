@@ -2,6 +2,8 @@
 
 use strict;
 use warnings;
+use utf8;
+
 use 5.14.0;
 
 use DateTime;
@@ -11,36 +13,38 @@ use Geo::Coordinates::UTM;
 package GBIFNorway;
 
 sub zone {
-  my $grid = shift;
-  if($grid =~ /^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|NH|NJ|NK|NL|NM|NN|NP|NQ|PH|PJ|PK|PL|PM|PN|PP|PQ$/) {
-    return "32V";
-  }
-  if($grid =~ /^LV|LA|LB|LC|LD|LE|MR|MV|MA|MB|MC|MD|ME|NR|NS|NT|NU|NV|NA|NB|NC|ND|NE|PR|PS|PT|PU|PV|PA|PB|PC|PD|PE$/) {
-    return "32W";
-  }
-  if($grid =~ /^UC|UD|UE|UF|UG|UH|UJ|UK|UL|UM|VC|VD|VE|VF|VG|VH|VJ|VK|VL|WC|WD|WE|WF|WG|WH|WJ|WK|WL|XC|XD|XE|XF|XG|XH|XJ|XK|XL|XM$/) {
-    return "33V";
-  }
-  if($grid =~ /^UN|UP|UQ|UR|US|UT|UU|UV|VM|VN|VP|VQ|VR|VS|VT|VU|VV|WM|WN|WP|WQ|WR|WS|WT|WU|WV|XN|XP|XQ|XR|XS|XT|XU|XV$/) {
-    return "33W";
-  }
-  if($grid =~ /^CR|CS|CT|CU|CV|CA|CB|CC|CD|CE|DR|DS|DT|DU|DV|DA|DB|DC|DD|DE|ER|ES|ET|EU|EV|EA|EB|EC|ED|EE|FR|FS|FT|FU|FV|FA|FB|FC|FD|FE$/) {
-    return "34W";
-  }
-  if($grid =~ /^LS|LT|LU|MS|MT|MU$/) {
-    return "35W";
-  }
-  if($grid =~ /^CQ$/) { # Sverige
-    return "34V";
-  }
-  if($grid =~ /^UA$/) { # Danmark
-    return "33U";
-  }
-  if($grid =~ /^PG$/) { # Danmark
-    return "32U";
-  }
-  warn "Unknown grid designator ", $grid;
-  return "32V";
+  given (shift) {
+    when (/^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|NH|NJ|NK|NL|NM|NN|NP|NQ|PH|PJ|PK|PL|PM|PN|PP|PQ$/) {
+      return "32V";
+    }
+    when(/^LV|LA|LB|LC|LD|LE|MR|MV|MA|MB|MC|MD|ME|NR|NS|NT|NU|NV|NA|NB|NC|ND|NE|PR|PS|PT|PU|PV|PA|PB|PC|PD|PE$/) {
+      return "32W";
+    }
+    when(/^UC|UD|UE|UF|UG|UH|UJ|UK|UL|UM|VC|VD|VE|VF|VG|VH|VJ|VK|VL|WC|WD|WE|WF|WG|WH|WJ|WK|WL|XC|XD|XE|XF|XG|XH|XJ|XK|XL|XM$/) {
+      return "33V";
+    }
+    when(/^UN|UP|UQ|UR|US|UT|UU|UV|VM|VN|VP|VQ|VR|VS|VT|VU|VV|WM|WN|WP|WQ|WR|WS|WT|WU|WV|XN|XP|XQ|XR|XS|XT|XU|XV$/) {
+      return "33W";
+    }
+    when(/^CR|CS|CT|CU|CV|CA|CB|CC|CD|CE|DR|DS|DT|DU|DV|DA|DB|DC|DD|DE|ER|ES|ET|EU|EV|EA|EB|EC|ED|EE|FR|FS|FT|FU|FV|FA|FB|FC|FD|FE$/) {
+      return "34W";
+    }
+    when(/^LS|LT|LU|MS|MT|MU$/) {
+      return "35W";
+    }
+    when(/^CQ$/) { # Sverige
+      return "34V";
+    }
+    when(/^UA$/) { # Danmark
+      return "33U";
+    }
+    when(/^PG$/) { # Danmark
+      return "32U";
+    }
+    default {
+      die "Unknown grid designator";
+    }
+  } 
 }
 
 sub musit {
@@ -79,6 +83,24 @@ sub musit {
     'locality'                  =>  $$_[32],
     'koordinater' => $$_[68],
   };
+
+  # Koordinatsystem
+  if($$_[56]) {
+    $$record{'verbatimCoordinateSystem'} = $$_[57] ? "MGRS X" : "MGRS";
+  } elsif(!$$_[68] && $$_[53]) {
+    $$record{'verbatimCoordinateSystem'} = "UTM";
+  } elsif(!$$_[68] && $$_[74]) {
+    $$record{'verbatimCoordinateSystem'} = "UTM";
+  } elsif($$_[68] =~ /utm/i) {
+    $$record{'verbatimCoordinateSystem'} = "UTM";
+  } elsif($$_[68] =~ /^\w+\s*[\d\,-]+$/) {
+    $$record{'verbatimCoordinateSystem'} = "MGRS";
+  } elsif($$_[68] =~ /[°']/) {
+    $$record{'verbatimCoordinateSystem'} = "Degrees";
+  } else {
+    warn "Ukjent koordinatsystem";
+  }
+
   my $lol = $_;
   if($$lol[56]) {
     my ($grid, $coords) = split(/\s/, $$lol[56]);
@@ -104,22 +126,22 @@ sub musit {
   given ($$_[68]) {
     when (/UTM/) { 
       # printf("%s\t%s\t%s\t", $$lol[53], $$lol[54], $$lol[55]);
-      #print($$lol[68]);
+      # print($$lol[68]);
       #print("\n");
     }
   }
   #my ($latitude,$longitude) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "32NR7131");
-
   return $record;
 }
 
 package DwC;
 sub new {
-  return $_[1]; 
+  my $me = shift;
+  my $record = shift;
+  return $record; 
 }
 
 package main;
-
 my $csv = Parse::CSV->new(
   file => $ARGV[0],
   filter => \&GBIFNorway::musit,
@@ -130,8 +152,16 @@ my $csv = Parse::CSV->new(
   }
 );
 
+my %uniques;
 while (my $row = $csv->fetch) {
   my $dwc = DwC->new($row);
+
+  my $cat = $dwc->{'catalogNumber'};
+  if($uniques{$cat}) {
+    die("Duplicate catalogNumber");
+  }
+  $uniques{$cat} = 1;
+
   print($dwc->{'catalogNumber'} . "\t");
   if($dwc->{'raw'}) {
     print($dwc->{'raw'} . "\t");
