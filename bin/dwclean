@@ -6,144 +6,76 @@ use utf8;
 
 use 5.14.0;
 
+use Getopt::Std;
 use DateTime;
 use Parse::CSV;
 use Geo::Coordinates::UTM;
 
+do 'formats/musit.pl';
+
 package GBIFNorway;
 
 sub zone {
-  given (shift) {
-    when (/^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|NH|NJ|NK|NL|NM|NN|NP|NQ|PH|PJ|PK|PL|PM|PN|PP|PQ$/) {
-      return "32V";
-    }
-    when(/^LV|LA|LB|LC|LD|LE|MR|MV|MA|MB|MC|MD|ME|NR|NS|NT|NU|NV|NA|NB|NC|ND|NE|PR|PS|PT|PU|PV|PA|PB|PC|PD|PE$/) {
-      return "32W";
-    }
-    when(/^UC|UD|UE|UF|UG|UH|UJ|UK|UL|UM|VC|VD|VE|VF|VG|VH|VJ|VK|VL|WC|WD|WE|WF|WG|WH|WJ|WK|WL|XC|XD|XE|XF|XG|XH|XJ|XK|XL|XM$/) {
-      return "33V";
-    }
-    when(/^UN|UP|UQ|UR|US|UT|UU|UV|VM|VN|VP|VQ|VR|VS|VT|VU|VV|WM|WN|WP|WQ|WR|WS|WT|WU|WV|XN|XP|XQ|XR|XS|XT|XU|XV$/) {
-      return "33W";
-    }
-    when(/^CR|CS|CT|CU|CV|CA|CB|CC|CD|CE|DR|DS|DT|DU|DV|DA|DB|DC|DD|DE|ER|ES|ET|EU|EV|EA|EB|EC|ED|EE|FR|FS|FT|FU|FV|FA|FB|FC|FD|FE$/) {
-      return "34W";
-    }
-    when(/^LS|LT|LU|MS|MT|MU$/) {
-      return "35W";
-    }
-    when(/^CQ$/) { # Sverige
-      return "34V";
-    }
-    when(/^UA$/) { # Danmark
-      return "33U";
-    }
-    when(/^PG$/) { # Danmark
-      return "32U";
-    }
-    default {
-      die "Unknown grid designator";
-    }
-  } 
-}
-
-sub musit {
-  my $record = {
-    'dateLastModified'          =>  $$_[0],
-    'institutionCode'           =>  $$_[1],
-    'collectionCode'            =>  $$_[2],
-    'catalogNumber'             =>  $$_[3],
-    'scientificName'            =>  $$_[4],
-    'basisOfRecord'             =>  $$_[5],
-    'kingdom'                   =>  $$_[6],
-    'phylum'                    =>  $$_[7],
-    'class'                     =>  $$_[8],
-    'order'                     =>  $$_[9],
-    'family'                    =>  $$_[10],
-    'genus'                     =>  $$_[11],
-    'specificEpithet'           =>  $$_[12],
-    'infraspecificEpithet'      =>  $$_[13],
-    'scientificNameAuthorship'  =>  $$_[14],
-    'identifiedBy'              =>  $$_[15],
-    'dateIdentified'            =>  "", # $$_[16-18]
-    'typeStatus'                =>  $$_[19],
-    # $$_[20] er collectorNumber
-    'fieldNumber'               =>  $$_[21],
-    'recordedBy'                =>  $$_[22],
-    'year'                      =>  $$_[23],
-    'month'                     =>  $$_[24],
-    'day'                       =>  $$_[25],
-    'startDayOfYear'            =>  $$_[26], # JulianDay 
-    'endDayOfYear'              =>  $$_[26], # JulianDay igjen
-    'eventTime'                 =>  $$_[27],
-    'continent'                 =>  $$_[28], # ContinentOcean, hm
-    'country'                   =>  $$_[29],
-    'stateProvince'             =>  $$_[30],
-    'county'                    =>  $$_[31],
-    'locality'                  =>  $$_[32],
-    'koordinater' => $$_[68],
-  };
-
-  # Koordinatsystem
-  if($$_[56]) {
-    $$record{'verbatimCoordinateSystem'} = $$_[57] ? "MGRS X" : "MGRS";
-  } elsif(!$$_[68] && $$_[53]) {
-    $$record{'verbatimCoordinateSystem'} = "UTM";
-  } elsif(!$$_[68] && $$_[74]) {
-    $$record{'verbatimCoordinateSystem'} = "UTM";
-  } elsif($$_[68] =~ /utm/i) {
-    $$record{'verbatimCoordinateSystem'} = "UTM";
-  } elsif($$_[68] =~ /^\w+\s*[\d\,-]+$/) {
-    $$record{'verbatimCoordinateSystem'} = "MGRS";
-  } elsif($$_[68] =~ /[°']/) {
-    $$record{'verbatimCoordinateSystem'} = "Degrees";
-  } else {
-    warn "Ukjent koordinatsystem";
+  my $raw = shift;
+  if ($raw =~ /^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|NH|NJ|NK|NL|NM|NN|NP|NQ|PH|PJ|PK|PL|PM|PN|PP|PQ$/) {
+    return "32V";
   }
-
-  my $lol = $_;
-  if($$lol[56]) {
-    my ($grid, $coords) = split(/\s/, $$lol[56]);
-    my $zone = zone($grid);
-    # $coords =~ s/,//;
-    my ($n, $e) = split(/,/, $coords);
-
-    if(length($n) < 5) {
-      $n = $n . 5;
-      $e = $e . 5;
-    }
-    my $mgrs = "${zone}${grid}${n}${e}";
-
-    printf("$mgrs\t");
-    my ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, $mgrs);
-    my ($zona, $east, $north) = Geo::Coordinates::UTM::mgrs_to_utm($mgrs);
-    $$record{'raw'} = "$zone\t$east\t$north";
-    $$record{'latitude'} = $lat;
-    $$record{'longitude'} = $lon;
-    # printf("%s\t%s\n", $grid, zone($grid));
-    return $record;
+  if ($raw =~ /^LV|LA|LB|LC|LD|LE|MR|MV|MA|MB|MC|MD|ME|NR|NS|NT|NU|NV|NA|NB|NC|ND|NE|PR|PS|PT|PU|PV|PA|PB|PC|PD|PE$/) {
+    return "32W";
   }
-  given ($$_[68]) {
-    when (/UTM/) { 
-      # printf("%s\t%s\t%s\t", $$lol[53], $$lol[54], $$lol[55]);
-      # print($$lol[68]);
-      #print("\n");
-    }
+  if ($raw =~ /^UC|UD|UE|UF|UG|UH|UJ|UK|UL|UM|VC|VD|VE|VF|VG|VH|VJ|VK|VL|WC|WD|WE|WF|WG|WH|WJ|WK|WL|XC|XD|XE|XF|XG|XH|XJ|XK|XL|XM$/) {
+    return "33V";
   }
-  #my ($latitude,$longitude) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "32NR7131");
-  return $record;
+  if ($raw =~ /^UN|UP|UQ|UR|US|UT|UU|UV|VM|VN|VP|VQ|VR|VS|VT|VU|VV|WM|WN|WP|WQ|WR|WS|WT|WU|WV|XN|XP|XQ|XR|XS|XT|XU|XV$/) {
+    return "33W";
+  }
+  if ($raw =~ /^CR|CS|CT|CU|CV|CA|CB|CC|CD|CE|DR|DS|DT|DU|DV|DA|DB|DC|DD|DE|ER|ES|ET|EU|EV|EA|EB|EC|ED|EE|FR|FS|FT|FU|FV|FA|FB|FC|FD|FE$/) {
+    return "34W";
+  }
+  if ($raw =~ /^LS|LT|LU|MS|MT|MU$/) {
+    return "35W";
+  }
+  if ($raw =~ /^CQ$/) { # Sverige
+    return "34V";
+  }
+  if ($raw =~ /^UA$/) { # Danmark
+    return "33U";
+  }
+  if ($raw =~ /^PG$/) { # Danmark
+    return "32U";
+  }
+  die "Unknown grid designator";
 }
 
 package DwC;
 sub new {
   my $me = shift;
   my $record = shift;
-  return $record; 
+  # bless $record;
+  return bless $record; 
+}
+sub printcsv {
+  my $me = shift;
+  $me->print('latitude');
+  #print($me->{'catalogNumber'} . "\t");
+  print($me->{'latitude'} . "\t");
+  print($me->{'longitude'});
+  print("\n");
 }
 
 package main;
+
+our $usage = "$0 [-ghu]\n";
+
+our ($opt_g, $opt_h, $opt_u);
+getopts("ghu");
+
+if($opt_h) {
+  print($usage) and exit;
+}
+
 my $csv = Parse::CSV->new(
-  file => $ARGV[0],
+  handle => \*STDIN,
   filter => \&GBIFNorway::musit,
   csv_attr => {
     quote_char => undef,
@@ -155,20 +87,34 @@ my $csv = Parse::CSV->new(
 my %uniques;
 while (my $row = $csv->fetch) {
   my $dwc = DwC->new($row);
-
   my $cat = $dwc->{'catalogNumber'};
-  if($uniques{$cat}) {
-    die("Duplicate catalogNumber");
-  }
-  $uniques{$cat} = 1;
 
-  print($dwc->{'catalogNumber'} . "\t");
-  if($dwc->{'raw'}) {
-    print($dwc->{'raw'} . "\t");
-    print($dwc->{'latitude'} . "\t");
-    print($dwc->{'longitude'});
-  } 
-  print("\n");
+  if(!$opt_u) {
+    if($uniques{$cat}) {
+      warn("Duplicate catalogNumber") and next;
+    }
+    $uniques{$cat} = 1;
+  }
+
+  # sjekke basisofrecord?
+  # sjekke gyldig navn, fyll på hierarki!
+  # sjekk om år ser gyldig ut
+  # sjekk om måned ser gyldig ut (rett?)
+  # sjekk om dag ser gyldig ut (rett?)
+  # legg til julianday?
+  # sjekk (legg til?) kontinent?
+
+  # koordinater:
+  # 1. se etter lat/long
+  # 2. se etter utm
+  # 3. se etter mgrs
+  # 4. se etter kommune og sette midtpunkt?
+  # 5. test mot land
+
+  # skjerme sensitive arter
+  # legg til rødlisteinfo?
+
+  $dwc->printcsv;
 }
 
 if($csv->errstr) {
