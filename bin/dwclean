@@ -5,65 +5,106 @@ use warnings;
 use utf8;
 
 use 5.14.0;
+use open qw/:std :utf8/;
 
+use POSIX;
 use Getopt::Std;
 use DateTime;
 use Parse::CSV;
 use Geo::Coordinates::UTM;
 
+use JSON::XS;
+
 do 'formats/musit.pl';
 
 package GBIFNorway;
-
-sub zone {
-  my $raw = shift;
-  if ($raw =~ /^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|NH|NJ|NK|NL|NM|NN|NP|NQ|PH|PJ|PK|PL|PM|PN|PP|PQ$/) {
-    return "32V";
-  }
-  if ($raw =~ /^LV|LA|LB|LC|LD|LE|MR|MV|MA|MB|MC|MD|ME|NR|NS|NT|NU|NV|NA|NB|NC|ND|NE|PR|PS|PT|PU|PV|PA|PB|PC|PD|PE$/) {
-    return "32W";
-  }
-  if ($raw =~ /^UC|UD|UE|UF|UG|UH|UJ|UK|UL|UM|VC|VD|VE|VF|VG|VH|VJ|VK|VL|WC|WD|WE|WF|WG|WH|WJ|WK|WL|XC|XD|XE|XF|XG|XH|XJ|XK|XL|XM$/) {
-    return "33V";
-  }
-  if ($raw =~ /^UN|UP|UQ|UR|US|UT|UU|UV|VM|VN|VP|VQ|VR|VS|VT|VU|VV|WM|WN|WP|WQ|WR|WS|WT|WU|WV|XN|XP|XQ|XR|XS|XT|XU|XV$/) {
-    return "33W";
-  }
-  if ($raw =~ /^CR|CS|CT|CU|CV|CA|CB|CC|CD|CE|DR|DS|DT|DU|DV|DA|DB|DC|DD|DE|ER|ES|ET|EU|EV|EA|EB|EC|ED|EE|FR|FS|FT|FU|FV|FA|FB|FC|FD|FE$/) {
-    return "34W";
-  }
-  if ($raw =~ /^LS|LT|LU|MS|MT|MU$/) {
-    return "35W";
-  }
-  if ($raw =~ /^CQ$/) { # Sverige
-    return "34V";
-  }
-  if ($raw =~ /^UA$/) { # Danmark
-    return "33U";
-  }
-  if ($raw =~ /^PG$/) { # Danmark
-    return "32U";
-  }
-  die "Unknown grid designator";
-}
 
 package DwC;
 sub new {
   my $me = shift;
   my $record = shift;
-  # bless $record;
+  $$record{rowNumber} = shift;
+  $$record{errors} = [];
   return bless $record; 
 }
+
+our @artskart = (
+  "dateLastModified", "institutionCode", "collectionCode", "catalogNumber",
+  "scientificName", "basisOfRecord",
+  "kingdom", "phylum", "class", "order", "family", "genus",
+  "specificEpithet", "infraspecificEpithet","scientificNameAuthorship",
+  "identifiedBy", "YearIdentified", "MonthIdentified", "DayIdentified",
+  "typeStatus", "recordNumber", "fieldNumber", "recordedBy",
+  "year", "month", "day", "startDayOfYear", "eventTime",
+  "continent", "country", "stateProvince", "county", "locality",
+  "decimalLongitude", "decimalLatitude", "coordinateUncertaintyInMeters",
+  "BoundingBox",
+  "minimumElevationInMeters", "maximumElevationInMeters",
+  "minimumDepthInMeters", "maximumDepthInMeters",
+  "sex", "preparations", "individualCount",
+  "otherCatalogNumbers", #"empty", "empty",
+  "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
+  "habitat",
+
+  # norske tillegg ~.~
+  #"Okologi", "Habitat", "Substrat", #"UTMsone", "UTMost", "UTMnord",
+  #"MGRSfra", "MGRStil", "georeferenceSources", "ElevationKilde",
+  #"Status", "NRikeID", "NRekkeID", "NKlasseID", "NOrdenID", "NFamilieID",
+  #"NSlektID", "NArtID",
+  "associatedMedia"
+
+);
+
+sub addError {
+  my $dwc = shift;
+  push($dwc->{errors}, {
+    row => $dwc->{rowNumber},
+    error => shift
+  });
+}
+
+sub validateBasisOfRecord {
+  my $dwc = shift;
+  if($dwc->{basisOfRecord} !~ /^Preserved specimen|Observation$/i) {
+    $dwc->addWarning("Unknown basisOfRecord $dwc->{basisOfRecord}");
+  }
+}
+
+sub validateDates {
+  my $dwc = shift;
+  my $year = ::strftime("%Y", gmtime);
+  if($dwc->{year} && ($dwc->{year} > $year || $dwc->{year} < 1800)) {
+    warn("Year out of bounds: $dwc->{year}");
+  }
+  if($dwc->{month} && ($dwc->{month} < 1 || $dwc->{month} > 12)) {
+    warn("Month out of bounds: $dwc->{month}");
+  }
+  if($dwc->{day} && ($dwc->{day} < 1 || $dwc->{day} > 31)) {
+    warn("Day out of bounds: $dwc->{month}");
+  }
+}
+
+sub printjson {
+  my $me = shift;
+  my $fields = shift;
+  my $json = JSON::XS->new->pretty->convert_blessed(1);
+  my %subset;
+  @subset{@$fields} = @{$me}{@$fields};
+  say($json->encode(\%subset));
+}
+
 sub printcsv {
   my $me = shift;
-  $me->print('latitude');
-  #print($me->{'catalogNumber'} . "\t");
-  print($me->{'latitude'} . "\t");
-  print($me->{'longitude'});
-  print("\n");
+  my $fields = shift;
+  say(join("\t", @{$me}{@$fields}));
 }
 
 package main;
+
+our %ellipsoids = (
+  "European 1950" => 14,
+  "WGS84"         => 23,
+);
 
 our $usage = "$0 [-ghu]\n";
 
@@ -77,30 +118,53 @@ if($opt_h) {
 my $csv = Parse::CSV->new(
   handle => \*STDIN,
   filter => \&GBIFNorway::musit,
-  csv_attr => {
-    quote_char => undef,
-    sep_char => "\t",
-    binary => 1
-  }
+  encoding_in  => "utf8",
+  quote_char => undef,
+  escape_char => undef,
+  sep_char => "\t",
+  binary => 1
 );
 
 my %uniques;
 while (my $row = $csv->fetch) {
-  my $dwc = DwC->new($row);
-  my $cat = $dwc->{'catalogNumber'};
+  my $dwc = DwC->new($row, $csv->row);
+  my $cat = $dwc->{catalogNumber};
 
   if(!$opt_u) {
     if($uniques{$cat}) {
+      $dwc->addError("Duplicate catalogNumber");
       warn("Duplicate catalogNumber") and next;
     }
     $uniques{$cat} = 1;
   }
 
-  # sjekke basisofrecord?
+  $dwc->validateBasisOfRecord;
+  $dwc->validateDates;
+
+  # Handle MGRS coordinates
+  if($$dwc{verbatimCoordinateSystem} eq "MGRS") {
+    my $mgrs = $$dwc{coordinates};
+    my $ellipsoid = $ellipsoids{$$dwc{geodeticDatum}};
+
+    my ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon($ellipsoid, $mgrs);
+
+    if($$dwc{geodeticDatum} eq "European 1950") {
+      my $e50 = Geo::Coordinates::Converter->new(
+        lat => $lat, lng => $lon,
+        datum => 'ED50'
+      );
+      my $wgs = $e50->convert('wgs84');
+      ($lat, $lon) = ($wgs->{lat}, $wgs->{lng});
+      $$dwc{geodeticDatum} = "WGS84";
+    }
+    $$dwc{decimalLatitude} = $lat;
+    $$dwc{decimalLongitude} = $lon;
+  }
+
+  $dwc->printcsv(\@artskart);
+  # $dwc->printjson(\@artskart);
+
   # sjekke gyldig navn, fyll på hierarki!
-  # sjekk om år ser gyldig ut
-  # sjekk om måned ser gyldig ut (rett?)
-  # sjekk om dag ser gyldig ut (rett?)
   # legg til julianday?
   # sjekk (legg til?) kontinent?
 
@@ -113,11 +177,9 @@ while (my $row = $csv->fetch) {
 
   # skjerme sensitive arter
   # legg til rødlisteinfo?
-
-  $dwc->printcsv;
 }
 
 if($csv->errstr) {
-  print($csv->errstr . "\n") and die;
+  warn($csv->errstr . "\n") and die;
 }
 
