@@ -1,0 +1,27 @@
+= dwclean
+
+renser datasett
+
++ mulighet for å sette `dateLastModified`
++ fjern duplikater basert på `catalogNumber`
++ valider `basisOfRecord`
++ sjekk om `year`, `month`, `day` osv er gyldige?
+| sjekk `scientificName` mot artsnavnebasen, fyller inn høyere taksa
+* fjern lokalitetsdata for skjermede arter
+
+* mgrs
+* utm
+* rikets nät
+
+* mulighet for å sjekke koordinater mot grenser
+
+* advarsel hvis `minimumDepthInMeters` > `maximumDepthInMeters`
+* advarsel hvis `minimumElevationInMeters` > `maximumElevationInMeters`
+
+* sette `julianDay`?
+* sjekk `country`, `stateProvince` og `county`?
+
+= dwcount
+
+teller gyldige, unike poster?
+
