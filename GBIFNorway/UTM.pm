@@ -30,7 +30,7 @@ sub parse {
   }
 
   if($zone && $easting && $northing) {
-    return ("$zone $easting $northing", 0);
+    return "$zone $easting $northing";
   }
 }
 

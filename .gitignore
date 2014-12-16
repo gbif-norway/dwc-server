@@ -1,1 +1,4 @@
-*.txt
+artsnavn/*.db
+artsnavn/*.lex
+geonames/*.db
+tmp

@@ -18,8 +18,7 @@ sub parsedec {
     if($2 eq "S") { $lat = -$lat };
     if($4 && $4 eq "W") { $lon = -$lon };
   } else {
-    warn "dec *$_*";
-    return ("", "");
+    die("Unable to parse verbatim coordinates");
   }
   $lat =~ s/^\.//; $lon =~ s/^\.//;
   return ($lat, $lon);
@@ -52,8 +51,7 @@ sub parsedeg {
       ($y, $ym, $ys, $x, $xm, $xs) = ($x, $xm, $xs, $y, $ym, $ys);
     }
   } else {
-    warn "deg *$_*";
-    return ("", "");
+    die("Unable to parse verbatim coordinates");
   }
   $lat = defined($y) ? $y + ($ym / 60) + ($ys / 3600) : "";
   $lon = defined($x) ? $x + ($xm / 60) + ($xs / 3600) : "";

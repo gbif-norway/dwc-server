@@ -5,20 +5,19 @@ renser datasett
 + mulighet for å sette `dateLastModified`
 + fjern duplikater basert på `catalogNumber`
 + valider `basisOfRecord`
-+ sjekk om `year`, `month`, `day` osv er gyldige?
-| sjekk `scientificName` mot artsnavnebasen, fyller inn høyere taksa
-* fjern lokalitetsdata for skjermede arter
++ sjekk om `year`, `month`, `day` osv er gyldige
++ sjekk `scientificName` mot artsnavnebasen, fyller inn høyere taksa
 
-* mgrs
-* utm
++ mgrs
++ utm
++ grader og desimalgrader
 * rikets nät
+
++ advarsel hvis `minimumDepthInMeters` > `maximumDepthInMeters`
++ advarsel hvis `minimumElevationInMeters` > `maximumElevationInMeters`
 
 * mulighet for å sjekke koordinater mot grenser
 
-* advarsel hvis `minimumDepthInMeters` > `maximumDepthInMeters`
-* advarsel hvis `minimumElevationInMeters` > `maximumElevationInMeters`
-
-* sette `julianDay`?
 * sjekk `country`, `stateProvince` og `county`?
 
 = dwcount

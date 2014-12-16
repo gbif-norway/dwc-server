@@ -50,7 +50,7 @@ sub zone {
   if ($raw =~ /^PG$/) { # Danmark
     return "32U";
   }
-  die "Unable to determine MGRS grid zone designator";
+  die "Unable to determine MGRS grid zone";
 }
 
 sub parse {

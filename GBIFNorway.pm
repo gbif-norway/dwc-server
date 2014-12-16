@@ -1,0 +1,3 @@
+package GBIFNorway;
+
+1;

@@ -18,7 +18,7 @@ sub guess {
     "";
   } elsif(/^\w{2}\s*[\d\s,]+$/) {
     "MGRS";
-  } elsif(/^[A-Z\-]{2-5}\s*[\d\s\-,]+$/) {
+  } elsif(/^[A-Z\-]{2,5}[\d\s\-\,]+$/) {
     "MGRS";
   } elsif(/^[\d\.°,]+\s*[NSEW]\s*[\d\.°,]+\s*[NSEW]$/) {
     "decimal degrees";
@@ -161,6 +161,8 @@ sub clean {
     $$dwc{verbatimCoordinateSystem} = "";
     $$dwc{decimalLatitude} = "";
     $$dwc{decimalLongitude} = "";
+    $$dwc{coordinateUncertaintyInMeters} = "";
+    # $dwc->addWarning("Not georeferenced. Coordinate precision removed.");
   } elsif($system eq "MGRS") {
     if($$dwc{verbatimCoordinates} !~ /^\d\d\w{3}\d+/ && $$dwc{UTMsone}) {
       my $z = $$dwc{UTMsone};
@@ -178,12 +180,14 @@ sub clean {
         $$dwc{coordinates} = uc $mgrs;
         $$dwc{coordinateUncertaintyInMeters} = $d;
         $$dwc{latitude} = ""; $$dwc{longitude} = "";
+        $dwc->addInfo("Coordinate precision calculated from MGRS coordinates");
       } else {
         die "skal aldri hit!";
       }
     };
     if($@) {
-      $dwc->addWarning("$@");
+      my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
+      $dwc->addWarning($warning, "parseMGRS");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
@@ -198,32 +202,56 @@ sub clean {
       $$dwc{verbatimCoordinateSystem} = "";
     }
   } elsif($system eq "decimal degrees") {
-    my ($lat, $lon) = GBIFNorway::LatLon::parsedec($$dwc{verbatimCoordinates});
-    $$dwc{decimalLatitude} = $lat;
-    $$dwc{decimalLongitude} = $lon;
-    $$dwc{verbatimCoordinateSystem} = "decimal degrees";
+    eval {
+      my $raw = $$dwc{verbatimCoordinates};
+      my ($lat, $lon) = GBIFNorway::LatLon::parsedec($raw);
+      $$dwc{decimalLatitude} = $lat;
+      $$dwc{decimalLongitude} = $lon;
+      $$dwc{verbatimCoordinateSystem} = "decimal degrees";
+    };
+    if($@) {
+      my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
+      $dwc->addWarning($warning, "parseDecimalDegrees");
+      $$dwc{decimalLatitude} = "";
+      $$dwc{decimalLongitude} = "";
+      $$dwc{verbatimCoordinateSystem} = "Unknown";
+    }
   } elsif($system eq "degrees minutes seconds") {
-    my ($lat, $lon) = GBIFNorway::LatLon::parsedeg($$dwc{verbatimCoordinates});
-    $$dwc{decimalLatitude} = $lat;
-    $$dwc{decimalLongitude} = $lon;
-    $$dwc{verbatimCoordinateSystem} = "degrees minutes seconds";
+    eval {
+      my $raw = $$dwc{verbatimCoordinates};
+      my ($lat, $lon) = GBIFNorway::LatLon::parsedeg($raw);
+      $$dwc{decimalLatitude} = $lat;
+      $$dwc{decimalLongitude} = $lon;
+      $$dwc{verbatimCoordinateSystem} = "degrees minutes seconds";
+    };
+    if($@) {
+      my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
+      $dwc->addWarning($warning, "parseDegrees");
+      $$dwc{decimalLatitude} = "";
+      $$dwc{decimalLongitude} = "";
+      $$dwc{verbatimCoordinateSystem} = "Unknown";
+    }
   } elsif($system eq "Unknown") {
-    $dwc->addWarning("Unknown coordinate system");
+    $dwc->addWarning("Unknown coordinate system", "coordinateSystem");
     $$dwc{decimalLatitude} = "";
     $$dwc{decimalLongitude} = "";
+    $$dwc{coordinateUncertaintyInMeters} = "";
     $$dwc{verbatimCoordinateSystem} = "unknown";
   } else {
     $dwc->addError("What?");
   }
 
-  # Datum shft
+  # Datum
   if($$dwc{verbatimSRS}) {
     if($$dwc{verbatimSRS} eq "ED50") {
       $$dwc{geodeticDatum} = "European 1950";
     } elsif($$dwc{verbatimSRS} eq "WGS84") {
       $$dwc{geodeticDatum} = "WGS84";
     }
+  } else {
+    $$dwc{geodeticDatum} = "";
   }
+
   return $dwc;
 }
 
