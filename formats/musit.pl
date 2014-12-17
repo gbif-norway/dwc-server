@@ -149,7 +149,7 @@ sub clean {
   my $dwc = shift;
 
   if($$dwc{NArtObsID}) {
-    $dwc->addError("Allerede levert via Artsobservasjoner");
+    $dwc->adderror("Allerede levert via Artsobservasjoner");
   }
 
   $$dwc{dateLastModified} = parsedate($$dwc{dateLastModified});
@@ -161,7 +161,7 @@ sub clean {
     $$dwc{decimalLatitude} = "";
     $$dwc{decimalLongitude} = "";
     $$dwc{coordinateUncertaintyInMeters} = "";
-    # $dwc->addWarning("Not georeferenced. Coordinate precision removed.");
+    # $dwc->addwarning("Not georeferenced. Coordinate precision removed.");
   } elsif($system eq "MGRS") {
     if($$dwc{verbatimCoordinates} !~ /^\d\d\w{3}\d+/ && $$dwc{UTMsone}) {
       my $z = $$dwc{UTMsone};
@@ -179,14 +179,14 @@ sub clean {
         $$dwc{coordinates} = uc $mgrs;
         $$dwc{coordinateUncertaintyInMeters} = $d;
         $$dwc{latitude} = ""; $$dwc{longitude} = "";
-        $dwc->addInfo("Coordinate precision calculated from MGRS coordinates");
+        $dwc->addinfo("Coordinate precision calculated from MGRS coordinates");
       } else {
         die "skal aldri hit!";
       }
     };
     if($@) {
       my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
-      $dwc->addWarning($warning, "parseMGRS");
+      $dwc->addwarning($warning, "parseMGRS");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
@@ -210,7 +210,7 @@ sub clean {
     };
     if($@) {
       my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
-      $dwc->addWarning($warning, "parseDecimalDegrees");
+      $dwc->addwarning($warning, "parseDecimalDegrees");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
@@ -225,19 +225,19 @@ sub clean {
     };
     if($@) {
       my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
-      $dwc->addWarning($warning, "parseDegrees");
+      $dwc->addwarning($warning, "parseDegrees");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
     }
   } elsif($system eq "Unknown") {
-    $dwc->addWarning("Unknown coordinate system", "coordinateSystem");
+    $dwc->addwarning("Unknown coordinate system", "coordinateSystem");
     $$dwc{decimalLatitude} = "";
     $$dwc{decimalLongitude} = "";
     $$dwc{coordinateUncertaintyInMeters} = "";
     $$dwc{verbatimCoordinateSystem} = "unknown";
   } else {
-    $dwc->addError("What?");
+    $dwc->adderror("What?");
   }
 
   # Datum

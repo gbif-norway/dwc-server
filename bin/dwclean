@@ -68,7 +68,7 @@ sub addTaxonomy {
   } elsif($$dwc{scientificName}) {
     ($genus, $epithet) = split(/\s/, $$dwc{scientificName}, 2);
   } else {
-    $dwc->addError("Missing scientificName", "name");
+    $dwc->adderror("Missing scientificName", "name");
     return;
   }
 
@@ -95,7 +95,7 @@ sub addTaxonomy {
     $$dwc{class} = $$name{Klasse};
     $$dwc{phylum} = $$name{Rekke};
     $$dwc{kingdom} = $$name{Rike};
-    $dwc->addInfo("Added higher taxonomic ranks from Artsnavnebasen");
+    $dwc->addinfo("Added higher taxonomic ranks from Artsnavnebasen");
   }
 }
 
@@ -136,17 +136,17 @@ our @artskart = (
   "associatedMedia"
 );
 
-sub addInfo {
+sub addinfo {
   my $dwc = shift;
   push($$dwc{info}, shift);
 }
 
-sub addError {
+sub adderror {
   my $dwc = shift;
   push($$dwc{errors}, shift);
 }
 
-sub addWarning {
+sub addwarning {
   my $dwc = shift;
   push($$dwc{warnings}, shift);
 }
@@ -154,7 +154,7 @@ sub addWarning {
 sub validateBasisOfRecord {
   my $dwc = shift;
   if($$dwc{basisOfRecord} !~ /^Preserved specimen|Observation$/i) {
-    $dwc->addWarning("Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
+    $dwc->addwarning("Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
   }
 }
 
@@ -162,10 +162,10 @@ sub validateCoordinates {
   my $dwc = shift;
   my ($lat, $lon) = ($$dwc{decimalLatitude}, $$dwc{decimalLongitude});
   if ($lat < -90 || $lat > 90) {
-    $dwc->addWarning("Latitude $lat out of bounds", "coordinates");
+    $dwc->addwarning("Latitude $lat out of bounds", "coordinates");
   }
   if ($lon < -180 || $lon > 360) {
-    $dwc->addWarning("Longitude $lon out of bounds", "coordinates");
+    $dwc->addwarning("Longitude $lon out of bounds", "coordinates");
   }
 }
 
@@ -173,13 +173,13 @@ sub validateDates {
   my $dwc = shift;
   my $year = ::strftime("%Y", gmtime);
   if($$dwc{year} && ($$dwc{year} > $year || $$dwc{year} < 1750)) {
-    $dwc->addWarning("Year out of bounds", "date");
+    $dwc->addwarning("Year out of bounds", "date");
   }
   if($$dwc{month} && ($$dwc{month} < 1 || $$dwc{month} > 12)) {
-    $dwc->addWarning("Month out of bounds", "date");
+    $dwc->addwarning("Month out of bounds", "date");
   }
   if($$dwc{day} && ($$dwc{day} < 1 || $$dwc{day} > 31)) {
-    $dwc->addWarning("Day out of bounds", "date");
+    $dwc->addwarning("Day out of bounds", "date");
   }
 }
 
@@ -190,10 +190,10 @@ sub validateElevation {
   my $mine = $$dwc{minimumElevationInMeters} =~ s/,/\./gr;
   my $maxe = $$dwc{maximumElevationInMeters} =~ s/,/\./gr;
   if($mind && $maxd && $mind > $maxd) {
-    $dwc->addWarning("Depth problem", "elevation");
+    $dwc->addwarning("Depth problem", "elevation");
   }
   if($mine && $maxe && $mine > $maxe) {
-    $dwc->addWarning("Elevation problem", "elevation");
+    $dwc->addwarning("Elevation problem", "elevation");
   }
 }
 
@@ -278,17 +278,17 @@ while (my $raw = $csv->fetch) {
   &$cleaner($dwc);
 
   if($opt_i) {
-    $dwc->addInfo("Replaced institutionCode with $opt_i", "institutionCode");
+    $dwc->addinfo("Replaced institutionCode with $opt_i", "institutionCode");
     $$dwc{institutionCode} = $opt_i if($opt_i);
   }
   if($opt_c) {
-    $dwc->addInfo("Replaced collectionCode with $opt_c", "collectionCode");
+    $dwc->addinfo("Replaced collectionCode with $opt_c", "collectionCode");
     $$dwc{collectionCode} = $opt_c if($opt_c);
   }
 
   if(!$opt_u) {
     if($uniques{$cat}) {
-      $dwc->addError("Duplicate catalogNumber", "core");
+      $dwc->adderror("Duplicate catalogNumber", "core");
     }
     $uniques{$cat} = 1;
   }
@@ -306,7 +306,7 @@ while (my $raw = $csv->fetch) {
   };
   if ($@) {
     my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
-    $dwc->addWarning($warning, "name");
+    $dwc->addwarning($warning, "name");
   }
 
   if($$dwc{country} && !$$dwc{continent}) {
@@ -326,13 +326,13 @@ while (my $raw = $csv->fetch) {
       my $point = [$e, $n];
       ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
       $$dwc{geodeticDatum} = "WGS84";
-      $dwc->addInfo(
+      $dwc->addinfo(
         "MGRS (ED-50) coordinates converted to WGS84 latitude/longitude", 
         "coordinates"
       );
     } else {
       ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon($e, $mgrs);
-      $dwc->addInfo("MGRS coordinates converted to WGS84 latitude/longitude",
+      $dwc->addinfo("MGRS coordinates converted to WGS84 latitude/longitude",
         "coordinates");
     }
     $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
@@ -345,7 +345,7 @@ while (my $raw = $csv->fetch) {
 
     $$dwc{decimalLatitude} = $lat;
     $$dwc{decimalLongitude} = $lon;
-    $dwc->addInfo("UTM coordinates converted to WGS84 latitude/longitude",
+    $dwc->addinfo("UTM coordinates converted to WGS84 latitude/longitude",
       "coordinates");
   } 
 
