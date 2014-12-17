@@ -81,10 +81,10 @@ sub parse {
     die "Missing northing";
   }
   if(length($e) != length($n) || length($e2) != length($n2)) {
-    die "?!?";
+    die "Broken MGRS string";
   }
   if(length($e) > 5) {
-    die "?!!";
+    die "Broken MGRS string (too long)";
   }
 
   if($z  !~ /^\d/) {
@@ -99,7 +99,7 @@ sub parse {
     if($z =~ /^\d\d\w\w\w$/) {
       $z2 = substr($z, 0, 3) . $z2;
     } else {
-      die "??? $z";
+      die "Unable to parse MGRS grid zone $z";
     }
   }
 
@@ -117,7 +117,7 @@ sub parse {
     $dn = (100 + $n2 - $n) / 2;
     $mgrs = sprintf("%s%05s%05s", $z, $ec, $nc);
   } elsif("$e$n" eq "$e2$n2") {
-    die "Uff";
+    die "Broken MGRS string";
   } else {
     ($n, $e) = (expand($n), expand($e));
     ($n2, $e2) = (expand($n2), expand($e2));
@@ -132,7 +132,7 @@ sub parse {
       $dn = (100 + $un2 - $un) / 2;
       $mgrs = Geo::Coordinates::UTM::utm_to_mgrs($uz, $ec, $nc);
     } else {
-      die "Ikke håndtert";
+      die "Finn ut hva dette betyr";
     }
   }
   my $d = int(sqrt($de*$de + $dn*$dn) + 0.5);

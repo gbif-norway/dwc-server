@@ -68,7 +68,7 @@ sub addTaxonomy {
   } elsif($$dwc{scientificName}) {
     ($genus, $epithet) = split(/\s/, $$dwc{scientificName}, 2);
   } else {
-    $dwc->addError("Missing scientificName", "scientificName");
+    $dwc->addError("Missing scientificName", "name");
     return;
   }
 
@@ -154,7 +154,18 @@ sub addWarning {
 sub validateBasisOfRecord {
   my $dwc = shift;
   if($$dwc{basisOfRecord} !~ /^Preserved specimen|Observation$/i) {
-    $dwc->addWarning("Unknown basisOfRecord $$dwc{basisOfRecord}");
+    $dwc->addWarning("Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
+  }
+}
+
+sub validateCoordinates {
+  my $dwc = shift;
+  my ($lat, $lon) = ($$dwc{decimalLatitude}, $$dwc{decimalLongitude});
+  if ($lat < -90 || $lat > 90) {
+    $dwc->addWarning("Latitude $lat out of bounds", "coordinates");
+  }
+  if ($lon < -180 || $lon > 360) {
+    $dwc->addWarning("Longitude $lon out of bounds", "coordinates");
   }
 }
 
@@ -162,13 +173,13 @@ sub validateDates {
   my $dwc = shift;
   my $year = ::strftime("%Y", gmtime);
   if($$dwc{year} && ($$dwc{year} > $year || $$dwc{year} < 1750)) {
-    $dwc->addWarning("Year out of bounds", "year");
+    $dwc->addWarning("Year out of bounds", "date");
   }
   if($$dwc{month} && ($$dwc{month} < 1 || $$dwc{month} > 12)) {
-    $dwc->addWarning("Month out of bounds", "month");
+    $dwc->addWarning("Month out of bounds", "date");
   }
   if($$dwc{day} && ($$dwc{day} < 1 || $$dwc{day} > 31)) {
-    $dwc->addWarning("Day out of bounds", "day");
+    $dwc->addWarning("Day out of bounds", "date");
   }
 }
 
@@ -179,10 +190,10 @@ sub validateElevation {
   my $mine = $$dwc{minimumElevationInMeters} =~ s/,/\./gr;
   my $maxe = $$dwc{maximumElevationInMeters} =~ s/,/\./gr;
   if($mind && $maxd && $mind > $maxd) {
-    $dwc->addWarning("Depth problem");
+    $dwc->addWarning("Depth problem", "elevation");
   }
   if($mine && $maxe && $mine > $maxe) {
-    $dwc->addWarning("Elevation problem");
+    $dwc->addWarning("Elevation problem", "elevation");
   }
 }
 
@@ -277,7 +288,7 @@ while (my $raw = $csv->fetch) {
 
   if(!$opt_u) {
     if($uniques{$cat}) {
-      $dwc->addError("Duplicate catalogNumber", "catalogNumber");
+      $dwc->addError("Duplicate catalogNumber", "core");
     }
     $uniques{$cat} = 1;
   }
@@ -291,19 +302,20 @@ while (my $raw = $csv->fetch) {
   $dwc->validateElevation;
 
   eval {
-    Artsnavn::addTaxonomy($dwc, "Plantae", 1);
+    Artsnavn::addTaxonomy($dwc, "Fungi", 1);
   };
   if ($@) {
     my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
-    $dwc->addWarning($warning);
+    $dwc->addWarning($warning, "name");
   }
 
   if($$dwc{country} && !$$dwc{continent}) {
     $$dwc{continent} = Geonames::continent($$dwc{country});
   }
 
-  # Handle MGRS coordinates
-  if($$dwc{verbatimCoordinateSystem} eq "MGRS") {
+  if($$dwc{decimalLatitude} || $$dwc{decimalLongitude}) {
+    $dwc->validateCoordinates;
+  } elsif($$dwc{verbatimCoordinateSystem} eq "MGRS") {
     my $mgrs = $$dwc{coordinates};
     my $e = $ellipsoids{$$dwc{geodeticDatum}};
     my ($lat, $lon);
@@ -378,18 +390,12 @@ while (my $raw = $csv->fetch) {
       }
     }
   }
-
-  # hm hm hm
-  if (@{$$dwc{errors}}) {
-    next;
-  }
+  next if (@{$$dwc{errors}});
 
   $dwc->printcsv(\*STDOUT, \@artskart);
 
-  # $dwc->printjson(\@artskart);
   # se etter kommune og sette midtpunkt?
   # test mot land
-  # skjerme sensitive arter?
 }
 
 if($csv->errstr) {

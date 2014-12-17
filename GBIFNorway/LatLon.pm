@@ -6,7 +6,7 @@ use utf8;
 package GBIFNorway::LatLon;
 
 sub parsedec {
-  my $_ = shift;
+  local $_ = shift;
   my ($lat, $lon);
   s/,/./g; s/^\s*//; s/\s*$//; s/^Long&Lat: //; s/[\.\s+]+/\./; s/°//i;
   if (/^([\d\.]+)°?([EW])\s*([\d\.]+)°?([NS])$/) {
@@ -25,7 +25,7 @@ sub parsedec {
 };
 
 sub parsedeg {
-  my $_ = shift;
+  local $_ = shift;
   my ($y, $x, $lat, $lon, $s, $w);
   my ($ym, $ys, $xm, $xs) = (0, 0, 0, 0);
 

@@ -78,9 +78,6 @@ sub filter {
     'county'                    =>  $$_[31],
     'locality'                  =>  $$_[32],
 
-    #'verbatimLongitude'         =>  $$_[33],
-    #'verbatimLatitude'          =>  $$_[34],
-
     'coordinateUncertaintyInMeters' =>  $$_[35],
     'minimumElevationInMeters'  =>  $$_[37],
     'maximumElevationInMeters'  =>  $$_[38],
@@ -98,6 +95,10 @@ sub filter {
     'associatedMedia'           =>  $$_[70],
     'dcterms:license'           =>  $$_[71],
 
+    'geodeticDatum'             =>  '',
+
+    'verbatimLongitude'         =>  "",
+    'verbatimLatitude'          =>  "",
     'verbatimCoordinateSystem'  =>  "",
     'verbatimCoordinates'       =>  $$_[68],
     'verbatimSRS'               =>  $$_[69],
@@ -121,17 +122,7 @@ sub filter {
     'MGRStil' =>  $$_[57],
     'ElevationKilde' =>  $$_[59],
     'Status' => $$_[60],
-    'NRikeID' => $$_[61],
-    'NRekkeID' => $$_[62],
-    'NKlasseID' => $$_[63],
-    'NOrdenID' => $$_[64],
-    'NFamilieID' => $$_[65],
-    'NSlektID' => $$_[66],
-    'NArtID' => $$_[67],
     'NArtObsID' => $$_[72],
-    'NUTMsone' => $$_[74],
-    'NUTMX' => $$_[75],
-    'NUTMY' => $$_[76],
     'empty' => ""
   };
 
@@ -141,19 +132,27 @@ sub filter {
   return $dwc;
 };
 
+our %months = (
+  "jan" => "01", "feb" => "02", "mar" => "03", "apr" => "04",
+  "mai" => "05", "jun" => "06", "jul" => "07", "aug" => "00",
+  "sep" => "09", "okt" => "10", "nov" => "11", "des" => "12"
+);
+
+sub parsedate {
+  local $_ = shift;
+  my ($d, $mon, $y) = split /[\s\-]/;
+  my $m = $months{$mon};
+  return "$y-$m-$d";
+};
+
 sub clean {
   my $dwc = shift;
 
-  # POSIX::setlocale(POSIX::LC_ALL, "nb_NO.utf8");
+  if($$dwc{NArtObsID}) {
+    $dwc->addError("Allerede levert via Artsobservasjoner");
+  }
 
-  # say STDERR $$dwc{dateLastModified};
-  # say STDERR Time::Piece->new->strftime("%b");
-  # Time::Piece->strptime($$dwc{dateLastModified}, "%d-%b-%Y %H:%M:%S");
-  # parse og %Y-%m-%d 'dateLastModified'
-
-  $$dwc{verbatimLongitude} = ""; $$dwc{longitude} = "";
-  $$dwc{verbatimLatitude} = ""; $$dwc{latitude} = "";
-  $$dwc{decimalLatitude} = ""; $$dwc{decimalLongitude} = "";
+  $$dwc{dateLastModified} = parsedate($$dwc{dateLastModified});
 
   my $system = guess($$dwc{verbatimCoordinates});
 
