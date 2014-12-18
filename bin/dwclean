@@ -58,7 +58,7 @@ if(!$db->open("artsnavn/artsnavn.db", $db->OREADER)) {
   my $ecode = $db->ecode();
   die("artsnavn error: " . $db->errmsg($ecode) . "\n");
 }
-sub addTaxonomy {
+sub addtaxonomy {
   my ($dwc, $kingdom, $overwrite) = @_;
   my $q = TokyoCabinet::TDBQRY->new($db);
 
@@ -151,14 +151,14 @@ sub addwarning {
   push($$dwc{warnings}, shift);
 }
 
-sub validateBasisOfRecord {
+sub validatebasisofrecord {
   my $dwc = shift;
   if($$dwc{basisOfRecord} !~ /^Preserved specimen|Observation$/i) {
     $dwc->addwarning("Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
   }
 }
 
-sub validateCoordinates {
+sub validatecoordinates {
   my $dwc = shift;
   my ($lat, $lon) = ($$dwc{decimalLatitude}, $$dwc{decimalLongitude});
   if ($lat < -90 || $lat > 90) {
@@ -169,7 +169,7 @@ sub validateCoordinates {
   }
 }
 
-sub validateDates {
+sub validatedates {
   my $dwc = shift;
   my $year = ::strftime("%Y", gmtime);
   if($$dwc{year} && ($$dwc{year} > $year || $$dwc{year} < 1750)) {
@@ -183,7 +183,7 @@ sub validateDates {
   }
 }
 
-sub validateElevation {
+sub validateelevation {
   my $dwc = shift;
   my $mind = $$dwc{minimumDepthInMeters} =~ s/,/\./gr;
   my $maxd = $$dwc{maximumDepthInMeters} =~ s/,/\./gr;
@@ -297,12 +297,12 @@ while (my $raw = $csv->fetch) {
     $$dwc{dateLastModified} = $opt_d;
   }
 
-  $dwc->validateBasisOfRecord;
-  $dwc->validateDates;
-  $dwc->validateElevation;
+  $dwc->validatebasisofrecord;
+  $dwc->validatedates;
+  $dwc->validateelevation;
 
   eval {
-    Artsnavn::addTaxonomy($dwc, "Fungi", 1);
+    Artsnavn::addtaxonomy($dwc, "Fungi", 1);
   };
   if ($@) {
     my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
@@ -314,7 +314,7 @@ while (my $raw = $csv->fetch) {
   }
 
   if($$dwc{decimalLatitude} || $$dwc{decimalLongitude}) {
-    $dwc->validateCoordinates;
+    $dwc->validatecoordinates;
   } elsif($$dwc{verbatimCoordinateSystem} eq "MGRS") {
     my $mgrs = $$dwc{coordinates};
     my $e = $ellipsoids{$$dwc{geodeticDatum}};
