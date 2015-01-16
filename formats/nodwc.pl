@@ -4,13 +4,13 @@ use utf8;
 package GBIFNorway::NODwC;
 
 sub filter {
-  my $record = {
+  my $dwc = {
     'dateLastModified'          =>  $$_[0],
     'institutionCode'           =>  $$_[1],
     'collectionCode'            =>  $$_[2],
     'catalogNumber'             =>  $$_[3],
     'scientificName'            =>  $$_[4],
-    'basisOfRecord'             =>  "Preserved specimen", # $$_[5],
+    'basisOfRecord'             =>  "Preserved specimen", 
     'kingdom'                   =>  $$_[6],
     'phylum'                    =>  $$_[7],
     'class'                     =>  $$_[8],
@@ -65,7 +65,7 @@ sub filter {
     'verbatimSRS'               =>  $$_[69],
 
     'occurrenceID'              =>  $$_[73],
-
+    
     # hm
     'decimalLongitude'          =>  "",
     'decimalLatitude'           =>  "",
@@ -73,52 +73,39 @@ sub filter {
     'geodeticDatum'             => "",
 
     # "norsk tillegg"
-    'YearIdentified' => $$_[16],
-    'MonthIdentified' => $$_[17],
-    'DayIdentified' => $$_[18],
-    'BoundingBox' => $$_[36],
-    'Okologi' => $$_[50],
-    'Substrat' => $$_[52],
-    'UTMsone' =>  $$_[53],
-    'UTMost' =>  $$_[54],
-    'UTMnord' =>  $$_[55],
-    'MGRSfra' =>  $$_[56],
-    'MGRStil' =>  $$_[57],
-    'ElevationKilde' =>  $$_[59],
-    'Status' => $$_[60],
-    'NRikeID' => $$_[61],
-    'NRekkeID' => $$_[62],
-    'NKlasseID' => $$_[63],
-    'NOrdenID' => $$_[64],
-    'NFamilieID' => $$_[65],
-    'NSlektID' => $$_[66],
-    'NArtID' => $$_[67],
-    'NArtObsID' => $$_[72],
-    'NUTMsone' => $$_[74],
-    'NUTMX' => $$_[75],
-    'NUTMY' => $$_[76],
     'empty' => ""
   };
-
-  warn "relationshipType ($$_[45]) should be empty" if $$_[45];
-  warn "relatedCatalogItem ($$_[46]) should be empty" if $$_[46];
-
-  $$record{verbatimCoordinateSystem} = "None";
-
-  if($$record{verbatimLatitude} && $$record{verbatimLongitude}) {
-    $$record{decimalLatitude} = $$record{verbatimLatitude};
-    $$record{decimalLongitude} = $$record{verbatimLongitude};
-  } elsif($$record{MGRSfra}) {
-    my $datum = ($$record{MGRSfra} =~ s/\/E// ? "European 1950" : "WGS84");
-    $$record{MGRSfra} =~ s/\/.?//;
-    my ($mgrs, $d) = GBIFNorway::MGRS::parse($$record{MGRSfra});
-    $$record{verbatimCoordinateSystem} = "MGRS";
-    $$record{geodeticDatum} = $datum;
-    $$record{coordinates} = $mgrs;
-    $$record{coordinateUncertaintyInMeters} = $d;
-  }
-  return $record;
+  return $dwc;
 }
 
-$GBIFNorway::formats{nodwc} = \&GBIFNorway::NODwC::filter;
+sub clean {
+  my $dwc = shift;
+
+  $$dwc{verbatimCoordinateSystem} = "None";
+
+  if (!$$dwc{catalogNumber}) {
+    $dwc->adderror("Missing catalognumber", "core");
+  } elsif ($$dwc{catalogNumber} =~ /\D/) {
+    $dwc->adderror("Invalid catalognumber", "core");
+  }
+
+  if($$dwc{verbatimLatitude} && $$dwc{verbatimLongitude}) {
+    $$dwc{decimalLatitude} = $$dwc{verbatimLatitude};
+    $$dwc{decimalLongitude} = $$dwc{verbatimLongitude};
+  } elsif($$dwc{MGRSfra}) {
+    my $datum = ($$dwc{MGRSfra} =~ s/\/E// ? "European 1950" : "WGS84");
+    $$dwc{MGRSfra} =~ s/\/.?//;
+    my ($mgrs, $d) = GBIFNorway::MGRS::parse($$dwc{MGRSfra});
+    $$dwc{verbatimCoordinateSystem} = "MGRS";
+    $$dwc{geodeticDatum} = $datum;
+    $$dwc{coordinates} = $mgrs;
+    $$dwc{coordinateUncertaintyInMeters} = $d;
+  }
+  return $dwc;
+}
+
+$GBIFNorway::filters{nodwc} = \&GBIFNorway::NODwC::filter;
+$GBIFNorway::cleaners{nodwc} = \&GBIFNorway::NODwC::clean;
+
+1;
 

@@ -160,7 +160,7 @@ sub clean {
     $$dwc{verbatimCoordinateSystem} = "";
     $$dwc{decimalLatitude} = "";
     $$dwc{decimalLongitude} = "";
-    $$dwc{coordinateUncertaintyInMeters} = "";
+    # $$dwc{coordinateUncertaintyInMeters} = "";
     # $dwc->addwarning("Not georeferenced. Coordinate precision removed.");
   } elsif($system eq "MGRS") {
     if($$dwc{verbatimCoordinates} !~ /^\d\d\w{3}\d+/ && $$dwc{UTMsone}) {
@@ -177,23 +177,32 @@ sub clean {
       if($mgrs) {
         $$dwc{verbatimCoordinateSystem} = "MGRS";
         $$dwc{coordinates} = uc $mgrs;
-        $$dwc{coordinateUncertaintyInMeters} = $d;
+        if($d > $$dwc{coordinateUncertaintyInMeters}) {
+          my $warning = "Coordinate uncertainty. $$dwc{coordinateUncertaintyInMeters} / $d";
+          $dwc->addwarning($warning, "coordinateUncertaintyInMeters");
+        }
+        # $$dwc{coordinateUncertaintyInMeters} = $d;
         $$dwc{latitude} = ""; $$dwc{longitude} = "";
-        $dwc->addinfo("Coordinate precision calculated from MGRS coordinates");
       } else {
         die "skal aldri hit!";
       }
     };
     if($@) {
-      my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
+      my $warning = $@ =~ s/\s+$//r =~ s/ at.*//r;
       $dwc->addwarning($warning, "parseMGRS");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
     }
   } elsif($system eq "UTM") {
+    my $utm;
     my $sone = $$dwc{UTMsone};
-    my $utm = GBIFNorway::UTM::parse($sone, $$dwc{verbatimCoordinates});
+    eval {
+      $utm = GBIFNorway::UTM::parse($sone, $$dwc{verbatimCoordinates});
+    };
+    if($@) {
+      $dwc->adderror("Unable to parse UTM coordinates");
+    }
     if($utm) {
       $$dwc{coordinates} = $utm;
       $$dwc{verbatimCoordinateSystem} = "UTM";
@@ -209,7 +218,7 @@ sub clean {
       $$dwc{verbatimCoordinateSystem} = "decimal degrees";
     };
     if($@) {
-      my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
+      my $warning = $@ =~ s/\s+$//r =~ s/ at.*//r;
       $dwc->addwarning($warning, "parseDecimalDegrees");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
@@ -224,7 +233,7 @@ sub clean {
       $$dwc{verbatimCoordinateSystem} = "degrees minutes seconds";
     };
     if($@) {
-      my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
+      my $warning = $@ =~ s/\s+$//r =~ s/ at.*//r;
       $dwc->addwarning($warning, "parseDegrees");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";

@@ -6,225 +6,28 @@ use utf8;
 use 5.14.0;
 use open qw/:std :utf8/;
 
-use POSIX;
 use Getopt::Std;
-use DateTime;
 use Parse::CSV;
-use Geo::Coordinates::UTM;
-use Geo::Proj4;
 
-use JSON::XS;
+use Artsnavn;
+use Geonames;
+use DwC;
 
 package GBIFNorway;
+
 our %filters = ();
 our %cleaners = ();
 
 do 'formats/musit.pl';
 do 'formats/nodwc.pl';
 
-package Geonames;
-use TokyoCabinet;
-our $db = TokyoCabinet::TDB->new;
-
-if(!$db->open("geonames/countries.db", $db->OREADER)) {
-  my $ecode = $db->ecode();
-  die("geonames error: " . $db->errmsg($ecode) . "\n");
-}
-our %continents = (
-  'AF' => 'Africa',
-  'AN' => 'Antarctica',
-  'AS' => 'Asia',
-  'EU' => 'Europe',
-  'NA' => 'North America',
-  'OC' => 'Oceania',
-  'SA' => 'South America'
-);
-sub continent {
-  my $country = shift;
-  my $info = $db->get($country);
-  my $continent = $continents{$$info{Continent}} if $info;
-  if(!$continent) {
-    # warn "Finner ikke kontinent for $country";
-    return "Unknown";
-  }
-  return $continent;
-}
-
-package Artsnavn;
-use TokyoCabinet;
-
-our $db = TokyoCabinet::TDB->new;
-if(!$db->open("artsnavn/artsnavn.db", $db->OREADER)) {
-  my $ecode = $db->ecode();
-  die("artsnavn error: " . $db->errmsg($ecode) . "\n");
-}
-sub addtaxonomy {
-  my ($dwc, $kingdom, $overwrite) = @_;
-  my $q = TokyoCabinet::TDBQRY->new($db);
-
-  my ($genus, $epithet);
-  if($$dwc{genus}) {
-    $genus = $$dwc{genus};
-  } elsif($$dwc{scientificName}) {
-    ($genus, $epithet) = split(/\s/, $$dwc{scientificName}, 2);
-  } else {
-    $dwc->adderror("Missing scientificName", "name");
-    return;
-  }
-
-  if($kingdom) {
-    $q->addcond("Rike", $q->QCSTREQ, $kingdom);
-  }
-  $q->addcond("Slekt", $q->QCSTREQ, $genus);
-
-  my $results = $q->search();
-  if(@{$results} < 1) {
-    my $l = scalar @{$results};
-    die("Couldn't find $genus in Artsnavnebasen");
-    return;
-  } elsif(@{$results} > 1) {
-    my $l = scalar @{$results};
-  }
-  my $name = $db->get($$results[0]);
-
-  if($overwrite) {
-    $$dwc{specificEpithet} = $epithet if $epithet;
-    $$dwc{genus} = $$name{Slekt};
-    $$dwc{family} = $$name{Familie};
-    $$dwc{order} = $$name{Orden};
-    $$dwc{class} = $$name{Klasse};
-    $$dwc{phylum} = $$name{Rekke};
-    $$dwc{kingdom} = $$name{Rike};
-    $dwc->addinfo("Added higher taxonomic ranks from Artsnavnebasen");
-  }
-}
-
-package DwC;
-sub new {
-  my $me = shift;
-  my $record = shift;
-  $$record{_row} = shift;
-  $$record{info} = [];
-  $$record{errors} = [];
-  $$record{warnings} = [];
-  return bless $record;
-}
-
-sub triplet {
-  my $me = shift;
-  return "$$me{institutionCode}:$$me{collectionCode}:$$me{catalogNumber}"
-}
-
-our @artskart = (
-  "dateLastModified", "institutionCode", "collectionCode", "catalogNumber",
-  "scientificName", "basisOfRecord",
-  "kingdom", "phylum", "class", "order", "family", "genus",
-  "specificEpithet", "infraspecificEpithet","scientificNameAuthorship",
-  "identifiedBy", # "YearIdentified", "MonthIdentified", "DayIdentified",
-  "typeStatus", "recordNumber", "fieldNumber", "recordedBy",
-  "year", "month", "day", "startDayOfYear", "eventTime",
-  "continent", "country", "stateProvince", "county", "locality",
-  "decimalLongitude", "decimalLatitude", "coordinateUncertaintyInMeters",
-  "geodeticDatum",
-  "minimumElevationInMeters", "maximumElevationInMeters",
-  "minimumDepthInMeters", "maximumDepthInMeters",
-  "sex", "preparations", "individualCount",
-  "otherCatalogNumbers",
-  "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
-  "habitat",
-  "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
-  "associatedMedia"
-);
-
-sub addinfo {
-  my $dwc = shift;
-  push($$dwc{info}, shift);
-}
-
-sub adderror {
-  my $dwc = shift;
-  push($$dwc{errors}, shift);
-}
-
-sub addwarning {
-  my $dwc = shift;
-  push($$dwc{warnings}, shift);
-}
-
-sub validatebasisofrecord {
-  my $dwc = shift;
-  if($$dwc{basisOfRecord} !~ /^Preserved specimen|Observation$/i) {
-    $dwc->addwarning("Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
-  }
-}
-
-sub validatecoordinates {
-  my $dwc = shift;
-  my ($lat, $lon) = ($$dwc{decimalLatitude}, $$dwc{decimalLongitude});
-  if ($lat < -90 || $lat > 90) {
-    $dwc->addwarning("Latitude $lat out of bounds", "coordinates");
-  }
-  if ($lon < -180 || $lon > 360) {
-    $dwc->addwarning("Longitude $lon out of bounds", "coordinates");
-  }
-}
-
-sub validatedates {
-  my $dwc = shift;
-  my $year = ::strftime("%Y", gmtime);
-  if($$dwc{year} && ($$dwc{year} > $year || $$dwc{year} < 1750)) {
-    $dwc->addwarning("Year out of bounds", "date");
-  }
-  if($$dwc{month} && ($$dwc{month} < 1 || $$dwc{month} > 12)) {
-    $dwc->addwarning("Month out of bounds", "date");
-  }
-  if($$dwc{day} && ($$dwc{day} < 1 || $$dwc{day} > 31)) {
-    $dwc->addwarning("Day out of bounds", "date");
-  }
-}
-
-sub validateelevation {
-  my $dwc = shift;
-  my $mind = $$dwc{minimumDepthInMeters} =~ s/,/\./gr;
-  my $maxd = $$dwc{maximumDepthInMeters} =~ s/,/\./gr;
-  my $mine = $$dwc{minimumElevationInMeters} =~ s/,/\./gr;
-  my $maxe = $$dwc{maximumElevationInMeters} =~ s/,/\./gr;
-  if($mind && $maxd && $mind > $maxd) {
-    $dwc->addwarning("Depth problem", "elevation");
-  }
-  if($mine && $maxe && $mine > $maxe) {
-    $dwc->addwarning("Elevation problem", "elevation");
-  }
-}
-
-sub printjson {
-  my $me = shift;
-  my $fields = shift;
-  my $json = JSON::XS->new->pretty->convert_blessed(1);
-  my %subset;
-  @subset{@$fields} = @{$me}{@$fields};
-  say($json->encode(\%subset));
-}
-
-sub printcsv {
-  my ($me, $handle, $fields) = @_;
-  my $row = join("\t", @{$me}{@$fields});
-  $row =~ s/\"/'/g;
-  say $handle $row;
-}
-
 package main;
-
-our %ellipsoids = (
-  "European 1950" => 14,
-  "WGS84"         => 23,
-);
 
 our $usage = "$0 [-ghu]\n";
 
 our ($opt_c, $opt_d, $opt_f, $opt_e, $opt_g, $opt_h, $opt_i, $opt_s, $opt_u);
-our ($opt_x, $opt_v);
-getopts("x:s:i:c:d:e:f:ghuv");
+our ($opt_x, $opt_v, $opt_k);
+getopts("k:x:s:i:c:d:e:f:ghuv");
 
 if($opt_h) {
   print($usage) and exit;
@@ -233,10 +36,10 @@ if($opt_h) {
 our $verbatim;
 if($opt_x) {
   open $verbatim, ">", $opt_x;
-  say $verbatim join("\t", @artskart);
+  say $verbatim join("\t", @DwC::terms);
 }
 
-say STDOUT join("\t", @artskart);
+say STDOUT join("\t", @DwC::terms);
 
 my $filter = $GBIFNorway::filters{$opt_f || "musit"};
 
@@ -250,19 +53,6 @@ my $csv = Parse::CSV->new(
   encoding_in  => "utf8"
 );
 
-# midlertidig hack?!?
-if($opt_e && $opt_e eq "html") {
-  say STDERR <<html
-<!doctype html>
-<meta charset=utf8>
-<title>rprt</title>
-
-<h1>TRH, lav</h1>
-
-<table>
-html
-}
-
 my %uniques;
 my $errno = 0;
 
@@ -272,127 +62,69 @@ while (my $raw = $csv->fetch) {
   my $cleaner = $GBIFNorway::cleaners{$opt_f || "musit"};
 
   if($opt_x) {
-    $dwc->printcsv($verbatim, \@artskart);
+    $dwc->printcsv($verbatim, @DwC::terms);
+}
+
+&$cleaner($dwc);
+
+if($opt_i) {
+  $dwc->addinfo("Replaced institutionCode with $opt_i", "institutionCode");
+  $$dwc{institutionCode} = $opt_i if($opt_i);
+}
+if($opt_c) {
+  $dwc->addinfo("Replaced collectionCode with $opt_c", "collectionCode");
+  $$dwc{collectionCode} = $opt_c if($opt_c);
+}
+
+if(!$opt_u) {
+  if($uniques{$cat}) {
+    $dwc->adderror("Duplicate catalogNumber", "core");
   }
+  $uniques{$cat} = 1;
+}
 
-  &$cleaner($dwc);
+if($opt_d) {
+  $$dwc{dateLastModified} = $opt_d;
+}
 
-  if($opt_i) {
-    $dwc->addinfo("Replaced institutionCode with $opt_i", "institutionCode");
-    $$dwc{institutionCode} = $opt_i if($opt_i);
-  }
-  if($opt_c) {
-    $dwc->addinfo("Replaced collectionCode with $opt_c", "collectionCode");
-    $$dwc{collectionCode} = $opt_c if($opt_c);
-  }
+$dwc->validatebasisofrecord;
+$dwc->validatedates;
+$dwc->validateelevation;
 
-  if(!$opt_u) {
-    if($uniques{$cat}) {
-      $dwc->adderror("Duplicate catalogNumber", "core");
-    }
-    $uniques{$cat} = 1;
-  }
+eval {
+  Artsnavn::addtaxonomy($dwc, $opt_k, 1);
+};
+if ($@) {
+  my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
+  $dwc->addwarning($warning, "name");
+}
 
-  if($opt_d) {
-    $$dwc{dateLastModified} = $opt_d;
-  }
+if($$dwc{country} && !$$dwc{continent}) {
+  $$dwc{continent} = Geonames::continent($$dwc{country});
+}
 
-  $dwc->validatebasisofrecord;
-  $dwc->validatedates;
-  $dwc->validateelevation;
+$dwc->handlecoordinates;
 
-  eval {
-    Artsnavn::addtaxonomy($dwc, "Fungi", 1);
-  };
-  if ($@) {
-    my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
-    $dwc->addwarning($warning, "name");
-  }
+# flytt inn i DwC~?
+my $triplet = $dwc->triplet;
+for my $error (@{$$dwc{errors}}) {
+  $errno++;
+  say STDERR "$errno\terror\t$triplet\t$$dwc{_row}\t$error";
+}
+for my $error (@{$$dwc{warnings}}) {
+  $errno++;
+  say STDERR "$errno\twarning\t$triplet\t$$dwc{_row}\t$error";
+}
 
-  if($$dwc{country} && !$$dwc{continent}) {
-    $$dwc{continent} = Geonames::continent($$dwc{country});
-  }
-
-  if($$dwc{decimalLatitude} || $$dwc{decimalLongitude}) {
-    $dwc->validatecoordinates;
-  } elsif($$dwc{verbatimCoordinateSystem} eq "MGRS") {
-    my $mgrs = $$dwc{coordinates};
-    my $e = $ellipsoids{$$dwc{geodeticDatum}};
-    my ($lat, $lon);
-    if($$dwc{geodeticDatum} eq "European 1950") {
-      my ($zone, $e, $n) = Geo::Coordinates::UTM::mgrs_to_utm($mgrs);
-      my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone +ellps=intl +units=m");
-      my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
-      my $point = [$e, $n];
-      ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
-      $$dwc{geodeticDatum} = "WGS84";
-      $dwc->addinfo(
-        "MGRS (ED-50) coordinates converted to WGS84 latitude/longitude", 
-        "coordinates"
-      );
-    } else {
-      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon($e, $mgrs);
-      $dwc->addinfo("MGRS coordinates converted to WGS84 latitude/longitude",
-        "coordinates");
-    }
-    $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
-    $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
-  } elsif($$dwc{verbatimCoordinateSystem} eq "UTM") {
-    my $d = $ellipsoids{$$dwc{geodeticDatum}};
-    my ($zone, $e, $n) = split(/\s/, $$dwc{coordinates}, 3);
-    $zone = "$zone" . "N";
-    my ($lat, $lon) = Geo::Coordinates::UTM::utm_to_latlon($d, $zone, $e, $n);
-
-    $$dwc{decimalLatitude} = $lat;
-    $$dwc{decimalLongitude} = $lon;
-    $dwc->addinfo("UTM coordinates converted to WGS84 latitude/longitude",
-      "coordinates");
-  } 
-
-  # flytt inn i DwC~?
-  my $triplet = $dwc->triplet;
-  for my $error (@{$$dwc{errors}}) {
+if($opt_v) {
+  for my $error (@{$$dwc{info}}) {
     $errno++;
-    if($opt_e && $opt_e eq "html") {
-      print STDERR "<tr class='error'>";
-      print STDERR "<td>$$dwc{_row}</td>";
-      print STDERR "<td>$triplet</td>";
-      print STDERR "<td>$error</td>";
-      print STDERR "</tr>\n";
-    } else {
-      say STDERR "$errno\terror\t$triplet\t$$dwc{_row}\t$error";
-    }
+    say STDERR "$errno\tinfo\t$triplet\t$$dwc{_row}\t$error";
   }
-  for my $error (@{$$dwc{warnings}}) {
-    $errno++;
-    if($opt_e && $opt_e eq "html") {
-      print STDERR "<tr class='warning'>";
-      print STDERR "<td>$$dwc{_row}</td>";
-      print STDERR "<td>$triplet</td>";
-      print STDERR "<td>$error</td>";
-      print STDERR "</tr>\n";
-    } else {
-      say STDERR "$errno\twarning\t$triplet\t$$dwc{_row}\t$error";
-    }
-  }
+}
+next if (@{$$dwc{errors}});
 
-  if($opt_v) {
-    for my $error (@{$$dwc{info}}) {
-      $errno++;
-      if($opt_e && $opt_e eq "html") {
-        print STDERR "<tr class='warning'>";
-        print STDERR "<td>$$dwc{_row}</td>";
-        print STDERR "<td>$triplet</td>";
-        print STDERR "<td>$error</td>";
-        print STDERR "</tr>\n";
-      } else {
-        say STDERR "$errno\tinfo\t$triplet\t$$dwc{_row}\t$error";
-      }
-    }
-  }
-  next if (@{$$dwc{errors}});
-
-  $dwc->printcsv(\*STDOUT, \@artskart);
+$dwc->printcsv(\*STDOUT, \@DwC::terms);
 
   # se etter kommune og sette midtpunkt?
   # test mot land
@@ -400,10 +132,6 @@ while (my $raw = $csv->fetch) {
 
 if($csv->errstr) {
   die($csv->errstr . "\n");
-}
-
-if($opt_e && $opt_e eq "html") {
-  say STDERR "</table>";
 }
 
 close($verbatim) if $verbatim;
