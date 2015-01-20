@@ -22,6 +22,7 @@ sub expand {
 };
 
 sub zone {
+  # return "35W";
   my $raw = shift;
   if ($raw =~ /^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|NH|NJ|NK|NL|NM|NN|NP|NQ|PH|PJ|PK|PL|PM|PN|PP|PQ$/) {
     return "32V";
@@ -54,9 +55,9 @@ sub zone {
 }
 
 sub parse {
-  # må splitte ting som 32VNP1006444838
   my $raw = shift;
   my ($zones, $es, $ns);
+  my @box;
 
   if($raw =~ /^(\d+\D+)(\d+)$/) { # 32VNP500500
     my $n = length($2) / 2;
@@ -91,7 +92,12 @@ sub parse {
     my $guess = zone($z);
     if($guess) {
       $z = $guess . "$z";
-      $z2 = $guess . "$z2";
+      my $guess2 = zone($z2);
+      if($guess2) {
+        $z2 = $guess2 . "$z2";
+      } else {
+        die "Unable to determine MGRS grid zone designator";
+      }
     } else {
       die "Unable to determine MGRS grid zone designator";
     }
@@ -106,38 +112,69 @@ sub parse {
   if("$z$e$n" eq "$z2$e2$n2") {
     $dn = $distance{length($n)};
     $de = $distance{length($e)};
+
+    # test
+    eval {
+      my $n1 = expand($n);
+      my $e1 = expand($e);
+      my $n2 = $n1 + ($distance{length($n)});
+      my $e2 = $e1 + ($distance{length($e)});
+      $n1 = $n1 - ($distance{length($n)});
+      $e1 = $e1 - ($distance{length($e)});
+      my $lol = $distance{length($e)} * 2;
+      my $mgrs_tl = sprintf("%s%05s%05s", $z, $e1, $n1);
+      my $mgrs_tr = sprintf("%s%05s%05s", $z, $e2, $n1);
+      my $mgrs_br = sprintf("%s%05s%05s", $z, $e2, $n2);
+      my $mgrs_bl = sprintf("%s%05s%05s", $z, $e1, $n2);
+
+      my ($lat, $lon);
+      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "$mgrs_tl");
+      push @box, [$lon, $lat];
+      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "$mgrs_tr");
+      push @box, [$lon, $lat];
+      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "$mgrs_br");
+      push @box, [$lon, $lat];
+      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "$mgrs_bl");
+      push @box, [$lon, $lat];
+    };
+
     $n = expand($n); $e = expand($e);
     $mgrs = sprintf("%s%05s%05s", $z, $e, $n);
   } elsif("$z" eq "$z2") {
+    my $k = $distance{length($n)} * 2;
     ($n, $e) = (expand($n), expand($e));
     ($n2, $e2) = (expand($n2), expand($e2));
     my $nc = int((($n + $n2) / 2) + 0.5);
     my $ec = int((($e + $e2) / 2) + 0.5);
-    $de = (100 + $e2 - $e) / 2;
-    $dn = (100 + $n2 - $n) / 2;
+    $de = ($k + $e2 - $e) / 2;
+    $dn = ($k + $n2 - $n) / 2;
     $mgrs = sprintf("%s%05s%05s", $z, $ec, $nc);
   } elsif("$e$n" eq "$e2$n2") {
     die "Broken MGRS string";
   } else {
+    my $k = $distance{length($n)} * 2;
     ($n, $e) = (expand($n), expand($e));
     ($n2, $e2) = (expand($n2), expand($e2));
     my $from = sprintf("%s%05s%05s", $z, $e, $n);
     my $to = sprintf("%s%05s%05s", $z2, $e2, $n2);
     my ($uz, $ue, $un) = Geo::Coordinates::UTM::mgrs_to_utm($from);
     my ($uz2, $ue2, $un2) = Geo::Coordinates::UTM::mgrs_to_utm($to);
-    if($uz eq $uz2) {
-      my $ec = int((($ue + $ue2) / 2));
-      my $nc = int((($un + $un2) / 2));
-      $de = (100 + $ue2 - $ue) / 2;
-      $dn = (100 + $un2 - $un) / 2;
-      $mgrs = Geo::Coordinates::UTM::utm_to_mgrs($uz, $ec, $nc);
-    } else {
-      die "Finn ut hva dette betyr";
+    if($uz ne $uz2) {
+      my $proj1 = Geo::Proj4->new("+proj=utm +zone=$uz2");
+      my $proj2 = Geo::Proj4->new("+proj=utm +zone=$uz");
+      ($ue2, $un2) = @{$proj1->transform($proj2, [$ue2, $un2])};
     }
+    my $nc = int((($un + $un2) / 2 + 0.5));
+    my $ec = int((($ue + $ue2) / 2 + 0.5));
+
+    $de = ($k + $ue2 - $ue) / 2;
+    $dn = ($k + $un2 - $un) / 2;
+    $mgrs = Geo::Coordinates::UTM::utm_to_mgrs($uz, $ec, $nc);
   }
   my $d = int(sqrt($de*$de + $dn*$dn) + 0.5);
 
-  return ($mgrs, $d);
+  return ($mgrs, $d, @box);
 };
 
 1;
+

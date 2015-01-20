@@ -3,6 +3,7 @@ use utf8;
 
 use POSIX;
 use Time::Piece;
+use Geo::WKT;
 
 use locale;
 
@@ -173,7 +174,7 @@ sub clean {
     }
 
     eval {
-      my ($mgrs, $d) = GBIFNorway::MGRS::parse($$dwc{verbatimCoordinates});
+      my ($mgrs, $d, @b) = GBIFNorway::MGRS::parse($$dwc{verbatimCoordinates});
       if($mgrs) {
         $$dwc{verbatimCoordinateSystem} = "MGRS";
         $$dwc{coordinates} = uc $mgrs;
@@ -183,6 +184,9 @@ sub clean {
         }
         # $$dwc{coordinateUncertaintyInMeters} = $d;
         $$dwc{latitude} = ""; $$dwc{longitude} = "";
+        if(@b) {
+          $$dwc{footprintWKT} = Geo::WKT::wkt_polygon(@b);
+        }
       } else {
         die "skal aldri hit!";
       }

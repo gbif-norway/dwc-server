@@ -14,7 +14,7 @@ ok($d == 430, "Usikkerhet I");
 
 ($mgrs, $d) = GBIFNorway::MGRS::parse("WQ 17-22 11-16");
 ok($mgrs eq "33WWQ2000014000", "Finn midten II");
-ok($d == 3606, "Usikkerhet II");
+ok($d == 4243, "Usikkerhet II");
 
 ($mgrs, $d) = GBIFNorway::MGRS::parse("NJ 50000 50000");
 ok($d == 1, "Usikkerhet (1 meter)");

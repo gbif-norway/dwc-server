@@ -36,7 +36,7 @@ our @terms = (
   "sex", "preparations", "individualCount",
   "otherCatalogNumbers",
   "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
-  "habitat",
+  "habitat", "footprintWKT",
   "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
   "associatedMedia"
 );
@@ -186,5 +186,4 @@ sub printcsv {
   $row =~ s/\"/'/g;
   say $handle $row;
 }
-
 
