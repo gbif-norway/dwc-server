@@ -127,15 +127,15 @@ sub parse {
       my $mgrs_br = sprintf("%s%05s%05s", $z, $e2, $n2);
       my $mgrs_bl = sprintf("%s%05s%05s", $z, $e1, $n2);
 
-      my ($lat, $lon);
-      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "$mgrs_tl");
-      push @box, [$lon, $lat];
-      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "$mgrs_tr");
-      push @box, [$lon, $lat];
-      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "$mgrs_br");
-      push @box, [$lon, $lat];
-      ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon(23, "$mgrs_bl");
-      push @box, [$lon, $lat];
+      my ($z, $x, $y);
+      ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_tl");
+      push @box, [$z, $x, $y];
+      ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_tr");
+      push @box, [$z, $x, $y];
+      ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_br");
+      push @box, [$z, $x, $y];
+      ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_bl");
+      push @box, [$z, $x, $y];
     };
 
     $n = expand($n); $e = expand($e);
