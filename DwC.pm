@@ -116,6 +116,8 @@ sub handlecoordinates {
       );
     } else {
       eval {
+        # bytt ut med proj
+        my $e = $$dwc{geodeticDatum};
         ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon($e, $mgrs);
         $dwc->addinfo("MGRS coordinates converted to WGS84 latitude/longitude",
           "coordinates");
