@@ -185,10 +185,15 @@ sub clean {
         # $$dwc{coordinateUncertaintyInMeters} = $d;
         $$dwc{latitude} = ""; $$dwc{longitude} = "";
         if(@b) {
+          my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
           if($$dwc{verbatimSRS} eq "ED50") {
-            my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
             @b = map {
               my $ed50 = Geo::Proj4->new("+proj=utm +zone=$$_[0] +ellps=intl +units=m +towgs84=-87,-98,-121");
+              $ed50->transform($wgs84, [$$_[1], $$_[2]]);
+            } @b;
+          } else {
+            @b = map {
+              my $ed50 = Geo::Proj4->new("+proj=utm +zone=$$_[0] +units=m");
               $ed50->transform($wgs84, [$$_[1], $$_[2]]);
             } @b;
           }
