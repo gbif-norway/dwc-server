@@ -100,7 +100,6 @@ sub handlecoordinates {
     $dwc->validatecoordinates;
   } elsif($$dwc{verbatimCoordinateSystem} eq "MGRS") {
     my $mgrs = $$dwc{coordinates};
-    my $e = $ellipsoids{$$dwc{geodeticDatum}};
     my ($lat, $lon);
     if($$dwc{geodeticDatum} eq "European 1950") {
       my ($zone, $e, $n) = Geo::Coordinates::UTM::mgrs_to_utm($mgrs);
