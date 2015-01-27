@@ -19,7 +19,7 @@ sub guess {
     "";
   } elsif(/^\w{2}\s*[\d\s,]+$/) {
     "MGRS";
-  } elsif(/^[A-Z\-]{2,5}[\d\s\-\,]+$/) {
+  } elsif(/^[A-Za-z\-]{2,5}[\d\s\-\,]+$/) {
     "MGRS";
   } elsif(/^[\d\.°,]+\s*[NSEW]\s*[\d\.°,]+\s*[NSEW]$/) {
     "decimal degrees";
@@ -31,13 +31,15 @@ sub guess {
     "decimal degrees";
   } elsif(/^(Lat\.)?\s*[NSEW\s\d,°-]+\s*[\d-,]+'/) {
     "degrees minutes seconds";
+  } elsif(/^\d+°\s*[\d\.]+'\s*[NSEW]\s+\d+°\s*[\d\.]+'\s*[NSEW]$/) {
+    "degrees minutes seconds";
   } elsif(/^[NØ]\d+[\s,]+[NØ]\d+\.?$/) {
     "UTM";
   } elsif(/UTM/) {
     "UTM";
   } elsif(/^Euref\. 89 (\d+)/) {
     "UTM (Euref.89)";
-  } elsif(/^Rikets nät/) {
+  } elsif(/^rikets nät/i) {
     "Rikets nät";
   } else {
     "Unknown";
@@ -150,7 +152,7 @@ sub clean {
   my $dwc = shift;
 
   if($$dwc{NArtObsID}) {
-    $dwc->adderror("Allerede levert via Artsobservasjoner");
+    $dwc->adderror("Already provided to Artskart and the GBIF network through Artsobservasjoner");
   }
 
   $$dwc{dateLastModified} = parsedate($$dwc{dateLastModified});
@@ -167,8 +169,7 @@ sub clean {
     if($$dwc{verbatimCoordinates} !~ /^\d\d\w{3}\d+/ && $$dwc{UTMsone}) {
       my $z = $$dwc{UTMsone};
       if($z =~ /^\d\d$/) {
-        # warn "gjetter belte V fra $z";
-        $z = $z . "V" if $z =~ /^\d\d$/;
+        $z = $z . "?";
       }
       $$dwc{verbatimCoordinates} = "$z$$dwc{verbatimCoordinates}";
     }
@@ -255,6 +256,13 @@ sub clean {
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
     }
+  } elsif($system eq "Rikets nät") {
+    $$dwc{decimalLatitude} = "";
+    $$dwc{decimalLongitude} = "";
+    if($$dwc{verbatimCoordinates} =~ /^rikets nät (.*)$/) {
+      $$dwc{verbatimCoordinates} = $1;
+    }
+    $$dwc{verbatimCoordinateSystem} = "RT90";
   } elsif($system eq "Unknown") {
     $dwc->addwarning("Unknown coordinate system", "coordinateSystem");
     $$dwc{decimalLatitude} = "";

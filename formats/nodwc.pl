@@ -21,7 +21,6 @@ sub filter {
     'infraspecificEpithet'      =>  $$_[13],
     'scientificNameAuthorship'  =>  $$_[14],
     'identifiedBy'              =>  $$_[15],
-    'dateIdentified'            =>  "$$_[16]-$$_[17]-$$_[18]",
     'typeStatus'                =>  $$_[19],
     'recordNumber'              =>  $$_[20],
     'fieldNumber'               =>  $$_[21],
@@ -56,7 +55,6 @@ sub filter {
     'occurrenceRemarks'         =>  $$_[47],
     'samplingProtocol'          =>  $$_[48],
     'identificationRemarks'     =>  $$_[49],
-    'habitat'                   =>  $$_[51],
     'georeferenceSources'       =>  $$_[58],
     'associatedMedia'           =>  $$_[70],
     'dcterms:license'           =>  $$_[71],
@@ -75,6 +73,8 @@ sub filter {
     # "norsk tillegg"
     'empty' => ""
   };
+  $$dwc{dateIdentified} = join '-', (grep /\S/, $$_[16], $$_[17], $$_[18]);
+  $$dwc{habitat} = join '. ', (grep /\S/, $$_[53]);
   return $dwc;
 }
 
@@ -85,8 +85,6 @@ sub clean {
 
   if (!$$dwc{catalogNumber}) {
     $dwc->adderror("Missing catalognumber", "core");
-  } elsif ($$dwc{catalogNumber} =~ /\D/) {
-    $dwc->adderror("Invalid catalognumber", "core");
   }
 
   if($$dwc{verbatimLatitude} && $$dwc{verbatimLongitude}) {

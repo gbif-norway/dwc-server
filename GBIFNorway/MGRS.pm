@@ -22,12 +22,12 @@ sub expand {
 };
 
 sub zone {
-  # return "35W";
   my $raw = shift;
-  if ($raw =~ /^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|NH|NJ|NK|NL|NM|NN|NP|NQ|PH|PJ|PK|PL|PM|PN|PP|PQ$/) {
+  $raw = uc $raw;
+  if ($raw =~ /^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|MR|NH|NJ|NK|NL|NM|NN|NP|NR|NQ|PH|PJ|PK|PL|PM|PN|PP|PR|PQ$/) {
     return "32V";
   }
-  if ($raw =~ /^LV|LA|LB|LC|LD|LE|MR|MV|MA|MB|MC|MD|ME|NR|NS|NT|NU|NV|NA|NB|NC|ND|NE|PR|PS|PT|PU|PV|PA|PB|PC|PD|PE$/) {
+  if ($raw =~ /^LV|LA|LB|LC|LD|LE|MV|MA|MB|MC|MD|ME|NS|NT|NU|NV|NA|NB|NC|ND|NE|PS|PT|PU|PV|PA|PB|PC|PD|PE$/) {
     return "32W";
   }
   if ($raw =~ /^UC|UD|UE|UF|UG|UH|UJ|UK|UL|UM|VC|VD|VE|VF|VG|VH|VJ|VK|VL|WC|WD|WE|WF|WG|WH|WJ|WK|WL|XC|XD|XE|XF|XG|XH|XJ|XK|XL|XM$/) {
@@ -88,16 +88,27 @@ sub parse {
     die "Broken MGRS string (too long)";
   }
 
+  # midlertidig tøys
+  if($z =~ /^(\d\d)\?(\w+)$/) {
+    my $gz = "$1";
+    my $le = "$2";
+    my $zo = zone($le);
+    if($zo =~ /^\d\d(\w)$/) {
+      my $xx = $1;
+      $z = $gz . $xx . $le;
+      if($z2 =~ /^\w\w$/) {
+        $z2 = $gz . $xx . $z2;
+      } else {
+        $z2 = $z;
+      }
+    }
+  }
+
   if($z  !~ /^\d/) {
     my $guess = zone($z);
     if($guess) {
       $z = $guess . "$z";
-      my $guess2 = zone($z2);
-      if($guess2) {
-        $z2 = $guess2 . "$z2";
-      } else {
-        die "Unable to determine MGRS grid zone designator";
-      }
+      $z2 = $z;
     } else {
       die "Unable to determine MGRS grid zone designator";
     }
@@ -113,30 +124,31 @@ sub parse {
     $dn = $distance{length($n)};
     $de = $distance{length($e)};
 
-    # test
-    eval {
-      my $n1 = expand($n);
-      my $e1 = expand($e);
-      my $n2 = $n1 + ($distance{length($n)});
-      my $e2 = $e1 + ($distance{length($e)});
-      $n1 = $n1 - ($distance{length($n)});
-      $e1 = $e1 - ($distance{length($e)});
-      my $lol = $distance{length($e)} * 2;
-      my $mgrs_tl = sprintf("%s%05s%05s", $z, $e1, $n1);
-      my $mgrs_tr = sprintf("%s%05s%05s", $z, $e2, $n1);
-      my $mgrs_br = sprintf("%s%05s%05s", $z, $e2, $n2);
-      my $mgrs_bl = sprintf("%s%05s%05s", $z, $e1, $n2);
+    if(length($n) < 5) {
+      eval {
+        my $n1 = expand($n);
+        my $e1 = expand($e);
+        my $n2 = $n1 + ($distance{length($n)});
+        my $e2 = $e1 + ($distance{length($e)});
+        $n1 = $n1 - ($distance{length($n)});
+        $e1 = $e1 - ($distance{length($e)});
+        my $lol = $distance{length($e)} * 2;
+        my $mgrs_tl = sprintf("%s%05s%05s", $z, $e1, $n1);
+        my $mgrs_tr = sprintf("%s%05s%05s", $z, $e2, $n1);
+        my $mgrs_br = sprintf("%s%05s%05s", $z, $e2, $n2);
+        my $mgrs_bl = sprintf("%s%05s%05s", $z, $e1, $n2);
 
-      my ($z, $x, $y);
-      ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_tl");
-      push @box, [$z, $x, $y];
-      ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_tr");
-      push @box, [$z, $x, $y];
-      ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_br");
-      push @box, [$z, $x, $y];
-      ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_bl");
-      push @box, [$z, $x, $y];
-    };
+        my ($z, $x, $y);
+        ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_tl");
+        push @box, [$z, $x, $y];
+        ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_tr");
+        push @box, [$z, $x, $y];
+        ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_br");
+        push @box, [$z, $x, $y];
+        ($z, $x, $y) = Geo::Coordinates::UTM::mgrs_to_utm("$mgrs_bl");
+        push @box, [$z, $x, $y];
+      };
+    }
 
     $n = expand($n); $e = expand($e);
     $mgrs = sprintf("%s%05s%05s", $z, $e, $n);
@@ -150,7 +162,7 @@ sub parse {
     $dn = ($k + $n2 - $n) / 2;
     $mgrs = sprintf("%s%05s%05s", $z, $ec, $nc);
   } elsif("$e$n" eq "$e2$n2") {
-    die "Broken MGRS string";
+    die "Broken MGRS string ok $z $z2";
   } else {
     my $k = $distance{length($n)} * 2;
     ($n, $e) = (expand($n), expand($e));

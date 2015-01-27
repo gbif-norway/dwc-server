@@ -15,19 +15,22 @@ use DwC;
 
 package GBIFNorway;
 
+our %names = ();
 our %filters = ();
 our %cleaners = ();
 
 do 'formats/musit.pl';
 do 'formats/nodwc.pl';
+do 'formats/dwc.pl';
 
 package main;
 
+# fiks dette + lag man
 our $usage = "$0 [-ghu]\n";
 
 our ($opt_c, $opt_d, $opt_f, $opt_e, $opt_g, $opt_h, $opt_i, $opt_s, $opt_u);
-our ($opt_x, $opt_v, $opt_k);
-getopts("k:x:s:i:c:d:e:f:ghuv");
+our ($opt_x, $opt_v, $opt_k, $opt_r);
+getopts("k:x:s:i:c:d:e:f:ghruv");
 
 if($opt_h) {
   print($usage) and exit;
@@ -42,8 +45,9 @@ if($opt_x) {
 say STDOUT join("\t", @DwC::terms);
 
 my $filter = $GBIFNorway::filters{$opt_f || "musit"};
+my $n = $GBIFNorway::names{$opt_f || "musit"};
 
-my $csv = Parse::CSV->new(
+my %options = (
   handle => \*STDIN,
   filter => $filter,
   binary => 1,
@@ -52,6 +56,13 @@ my $csv = Parse::CSV->new(
   escape_char => undef,
   encoding_in  => "utf8"
 );
+
+# stygg hack
+if ($GBIFNorway::names{$opt_f || "musit"}) {
+  $options{names} = $GBIFNorway::names{$opt_f || "musit"},
+}
+
+my $csv = Parse::CSV->new(%options);
 
 my %uniques;
 my $errno = 0;
@@ -62,7 +73,7 @@ while (my $raw = $csv->fetch) {
   my $cleaner = $GBIFNorway::cleaners{$opt_f || "musit"};
 
   if($opt_x) {
-    $dwc->printcsv($verbatim, @DwC::terms);
+    $dwc->printcsv($verbatim, \@DwC::terms);
   }
 
   &$cleaner($dwc);
@@ -91,10 +102,11 @@ while (my $raw = $csv->fetch) {
   $dwc->validatedates;
   $dwc->validateelevation;
 
+  my $tmp = $opt_r || 0;
   eval {
     Artsnavn::addtaxonomy($dwc, $opt_k, 1);
   };
-  if ($@) {
+  if ($@ && !$tmp) {
     my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
     $dwc->addwarning($warning, "name");
   }

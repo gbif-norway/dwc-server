@@ -1,7 +1,10 @@
+use utf8;
+
 use DateTime;
 use POSIX;
 use Geo::Coordinates::UTM;
 use Geo::Proj4;
+use MGRS;
 
 package DwC;
 
@@ -38,7 +41,7 @@ our @terms = (
   "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
   "habitat", "footprintWKT",
   "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
-  "associatedMedia"
+  "associatedMedia", "organismID"
 );
 
 sub addinfo {
@@ -58,7 +61,7 @@ sub addwarning {
 
 sub validatebasisofrecord {
   my $dwc = shift;
-  if($$dwc{basisOfRecord} !~ /^Preserved specimen|Observation$/i) {
+  if($$dwc{basisOfRecord} !~ /^MaterialSample|Preserved specimen|Observation$/i) {
     $dwc->addwarning("Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
   }
 }
@@ -91,44 +94,43 @@ sub validatedates {
 sub handlecoordinates {
   my $dwc = shift;
 
-  my %ellipsoids = (
-    "European 1950" => 14,
-    "WGS84"         => 23,
-  );
-
   if($$dwc{decimalLatitude} || $$dwc{decimalLongitude}) {
     $dwc->validatecoordinates;
   } elsif($$dwc{verbatimCoordinateSystem} eq "MGRS") {
     my $mgrs = $$dwc{coordinates};
     my ($lat, $lon);
-    if($$dwc{geodeticDatum} eq "European 1950") {
-      my ($zone, $e, $n) = Geo::Coordinates::UTM::mgrs_to_utm($mgrs);
-      my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone +ellps=intl +units=m +towgs84=-87,-98,-121");
-      my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
-      my $point = [$e, $n];
-      ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
-      $$dwc{geodeticDatum} = "WGS84";
-      $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
-      $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
-      $dwc->addinfo(
-        "MGRS (ED-50) coordinates converted to WGS84 latitude/longitude", 
-        "coordinates"
-      );
-    } else {
-      eval {
-        # bytt ut med proj
-        my $e = $$dwc{geodeticDatum};
-        ($lat, $lon) = Geo::Coordinates::UTM::mgrs_to_latlon($e, $mgrs);
+
+    eval {
+      if($$dwc{geodeticDatum} eq "European 1950") {
+        my ($zone, $h, $e, $n) = MGRS::mgrs_to_utm($mgrs);
+        my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone$h +ellps=intl +units=m +towgs84=-87,-98,-121");
+        my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
+        my $point = [$e, $n];
+        ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
+        $$dwc{geodeticDatum} = "WGS84";
+        $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
+        $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
+        $dwc->addinfo(
+          "MGRS (ED-50) coordinates converted to WGS84 latitude/longitude", 
+          "coordinates"
+        );
+      } else {
+        my ($zone, $h, $e, $n) = MGRS::mgrs_to_utm($mgrs);
+        my $utm = Geo::Proj4->new("+proj=utm +zone=$zone$h +units=m");
+        my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
+        my $point = [$e, $n];
+        ($lon, $lat) = @{$utm->transform($wgs84, $point)};
+
         $dwc->addinfo("MGRS coordinates converted to WGS84 latitude/longitude",
           "coordinates");
         $$dwc{geodeticDatum} = "WGS84";
         $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
         $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
-      };
-      if($@) {
-        $dwc->adderror("Failed to convert MGRS coordinates: $mgrs");
-        ($lat, $lon) = ("", "");
       }
+    };
+    if($@) {
+      $dwc->addwarning("Failed to convert MGRS coordinates: $mgrs");
+      ($lat, $lon) = ("", "");
     }
   } elsif($$dwc{verbatimCoordinateSystem} eq "UTM") {
     my ($zone, $e, $n) = split(/\s/, $$dwc{coordinates}, 3);
@@ -150,12 +152,47 @@ sub handlecoordinates {
       $$dwc{geodeticDatum} = "WGS84";
       $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
       $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
-
       $dwc->addinfo("UTM coordinates converted to WGS84 latitude/longitude",
         "coordinates");
     }
-  } 
-
+  } elsif($$dwc{verbatimCoordinateSystem} eq "RT90") {
+    eval {
+      $SIG{__WARN__} = sub { die @_; }; #kya~
+      my $rt90 = Geo::Proj4->new(init => "epsg:2400");
+      my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
+      my ($n, $e) = split /[\s,]/, $$dwc{verbatimCoordinates};
+      #tmp
+      if(!$$dwc{coordinateUncertaintyInMeters}) {
+        my $l = length($e);
+        if($l == 7) {
+          $$dwc{coordinateUncertaintyInMeters} = 1;
+        } elsif($l == 6) {
+          $$dwc{coordinateUncertaintyInMeters} = 10;
+        } elsif($l == 5) {
+          $$dwc{coordinateUncertaintyInMeters} = 100;
+        } elsif($l == 4) {
+          $$dwc{coordinateUncertaintyInMeters} = 1000;
+        } elsif($l == 3) {
+          $$dwc{coordinateUncertaintyInMeters} = 10000;
+        } elsif($l == 2) {
+          $$dwc{coordinateUncertaintyInMeters} = 100000;
+        } elsif($l == 1) {
+          $$dwc{coordinateUncertaintyInMeters} = 1000000;
+        }
+      }
+      $e = $e . "0" while(length($e) < 7);
+      $n = $n . "0" while(length($n) < 7);
+      my ($lon, $lat) = @{$rt90->transform($wgs84, [$e, $n])};
+      $$dwc{geodeticDatum} = "WGS84";
+      $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
+      $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
+      $dwc->addinfo("RT90 (Rikets nät) coordinates converted to WGS84 lat/lon",
+        "coordinates");
+    };
+    if($@) {
+      $dwc->addwarning("Unable to convert RT90 (Rikets nät) coordinates");
+    }
+  }
 }
 
 sub validateelevation {

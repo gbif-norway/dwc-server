@@ -53,6 +53,8 @@ sub parsedeg {
   } else {
     die("Unable to parse verbatim coordinates");
   }
+  $xs = 0 if(!$xs || $xs eq ".");
+  $ys = 0 if(!$ys || $ys eq ".");
   $lat = defined($y) ? $y + ($ym / 60) + ($ys / 3600) : "";
   $lon = defined($x) ? $x + ($xm / 60) + ($xs / 3600) : "";
 

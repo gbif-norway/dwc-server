@@ -3,8 +3,9 @@
 use strict;
 use utf8;
 
+binmode(STDOUT, ":utf8");
+
 use XML::Simple;
-use Data::Dumper;
 
 my $dwc = XMLin(\*STDIN, ForceArray => ['dwr:SimpleDarwinRecord']);
 
@@ -17,7 +18,7 @@ my @headers = (
   'eventDate', 'nomenclaturalCode',
   'basisOfRecord', 'recordedBy',
   'dateLastModified', 'dateIdentified', 'identifiedBy',
-  'lifestage', 'sex', 'preparations'
+  'lifestage', 'sex', 'preparations',
   'continent',
   'countryCode', 'country', 'stateProvince', 'county', 'locality',
   'geodeticDatum', 'decimalLatitude', 'decimalLongitude',
@@ -27,9 +28,12 @@ my @headers = (
   'rightsHolder',
 );
 
-  say STDOUT join("\t", @headers);
-  for my $record (@$records) {
-  print(Dumper($record));
-  print("\n\n\n");
-  }
+my @dwcheaders = map {
+  'dwc:' . $_;
+} @headers;
+
+say STDOUT join("\t", @headers);
+for my $record (@$records) {
+  say STDOUT join("\t", @{$record}{@dwcheaders});
+}
 
