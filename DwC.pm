@@ -5,6 +5,7 @@ use POSIX;
 use Geo::Coordinates::UTM;
 use Geo::Proj4;
 use MGRS;
+use GeoCheck;
 
 package DwC;
 
@@ -57,6 +58,46 @@ sub adderror {
 sub addwarning {
   my $dwc = shift;
   push($$dwc{warnings}, shift);
+}
+
+# fix
+sub validategeography {
+  eval {
+    my $dwc = shift;
+    my ($lat, $lon) = ($$dwc{decimalLatitude}, $$dwc{decimalLongitude});
+    my $prec = $$dwc{coordinateUncertaintyInMeters};
+    my $pol;
+    if($$dwc{stateProvince} && $$dwc{county}) {
+      my $county = $$dwc{county};
+      # v stygg hack
+      if($county eq "FROGN") {
+        $county = "FROGN*";
+      }
+      if($county eq "Frogn") {
+        $county = "Frogn*";
+      }
+
+      my $id = "county_" . $$dwc{stateProvince} . "_" . $county;
+      return if GeoCheck::inside($id, $lat, $lon);
+      my ($p, $d) = GeoCheck::distance($id, $lat, $lon);
+      return if($prec && $d < $prec);
+      $pol = GeoCheck::polygon($id);
+      $d = int($d);
+      $dwc->addwarning("$d meters outside $county", "geography");
+      $dwc->addinfo($pol) if $pol;
+    }
+    if($$dwc{stateProvince}) {
+      my $id = "stateprovince_" . $$dwc{stateProvince};
+      return if GeoCheck::inside($id, $lat, $lon);
+      my ($p, $d) = GeoCheck::distance($id, $lat, $lon);
+      return if($prec && $d < $prec);
+      $pol = GeoCheck::polygon($id);
+      $d = int($d);
+      my $sp = $$dwc{stateProvince};
+      $dwc->addwarning("$d meters outside $sp", "geography");
+      $dwc->addinfo($pol) if $pol;
+    }
+  };
 }
 
 sub validatebasisofrecord {

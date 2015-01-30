@@ -116,6 +116,7 @@ while (my $raw = $csv->fetch) {
   }
 
   $dwc->handlecoordinates;
+  $dwc->validategeography if($$dwc{decimalLatitude} && $$dwc{decimalLongitude});
 
 # flytt inn i DwC~?
   my $triplet = $dwc->triplet;
