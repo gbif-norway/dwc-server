@@ -10,6 +10,7 @@ package GBIFNorway::UTM;
 sub parse {
   my $zone = shift;
   local $_ = shift;
+  s/^UTM-ref\.\s*\(WGS84\)\s*//;
   s/^\s+//; s/\s*$//; s/^UTM\:\s*//i; s/^UTM\(\),,\s*//i; s/^UTM\s*//i;
   s/^\(\s//; s/^\(\),$//; s/^[VW,]\s+//i;
   $zone = $1 if(s/^\((\d\d\w?)\)\s*//);

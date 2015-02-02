@@ -7,6 +7,8 @@ use Geo::Proj4;
 use MGRS;
 use GeoCheck;
 
+use utf8;
+
 package DwC;
 
 sub new {
@@ -70,11 +72,11 @@ sub validategeography {
     if($$dwc{stateProvince} && $$dwc{county}) {
       my $county = $$dwc{county};
       # v stygg hack
-      if($county eq "FROGN") {
-        $county = "FROGN*";
-      }
-      if($county eq "Frogn") {
+      if($county eq "FROGN" || $county eq "Frogn") {
         $county = "Frogn*";
+      }
+      if($county eq "SANDEFJORD" || $county eq "Sandefjord") {
+        $county = "Sandefjord*";
       }
 
       my $id = "county_" . $$dwc{stateProvince} . "_" . $county;
@@ -83,7 +85,13 @@ sub validategeography {
       return if($prec && $d < $prec);
       $pol = GeoCheck::polygon($id);
       $d = int($d);
-      $dwc->addwarning("$d meters outside $county", "geography");
+      
+      my $sug = GeoCheck::georef($lat, $lon, 'county');
+      if($sug) {
+        $dwc->addwarning("$d meters outside $county ($sug?)", "geography");
+      } else {
+        $dwc->addwarning("$d meters outside $county", "geography");
+      }
       $dwc->addinfo($pol) if $pol;
     }
     if($$dwc{stateProvince}) {
@@ -94,7 +102,12 @@ sub validategeography {
       $pol = GeoCheck::polygon($id);
       $d = int($d);
       my $sp = $$dwc{stateProvince};
-      $dwc->addwarning("$d meters outside $sp", "geography");
+      my $sug = GeoCheck::georef($lat, $lon, 'stateprovince');
+      if($sug) {
+        $dwc->addwarning("$d meters outside $sp ($sug?)", "geography");
+      } else {
+        $dwc->addwarning("$d meters outside $sp", "geography");
+      }
       $dwc->addinfo($pol) if $pol;
     }
   };
