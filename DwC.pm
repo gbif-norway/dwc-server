@@ -34,7 +34,7 @@ our @terms = (
   "identifiedBy", "dateIdentified",
   "typeStatus", "recordNumber", "fieldNumber", "recordedBy",
   "year", "month", "day", "startDayOfYear", "eventTime",
-  "continent", "country", "stateProvince", "county", "locality",
+  "continent", "country", "stateProvince", "county", "municipality", "locality",
   "decimalLongitude", "decimalLatitude", "coordinateUncertaintyInMeters",
   "geodeticDatum",
   "minimumElevationInMeters", "maximumElevationInMeters",
@@ -69,6 +69,12 @@ sub validategeography {
     my ($lat, $lon) = ($$dwc{decimalLatitude}, $$dwc{decimalLongitude});
     my $prec = $$dwc{coordinateUncertaintyInMeters};
     my $pol;
+
+    my $mun = GeoCheck::georef($lat, $lon, 'municipality');
+    if($mun) {
+      $$dwc{municipality} = $mun;
+    }
+
     if($$dwc{stateProvince} && $$dwc{county}) {
       my $county = $$dwc{county};
       # v stygg hack
@@ -78,6 +84,9 @@ sub validategeography {
       if($county eq "SANDEFJORD" || $county eq "Sandefjord") {
         $county = "Sandefjord*";
       }
+      if($county eq "NOME" || $county eq "Nome") {
+        $county = "Nome*";
+      }
 
       my $id = "county_" . $$dwc{stateProvince} . "_" . $county;
       return if GeoCheck::inside($id, $lat, $lon);
@@ -85,7 +94,7 @@ sub validategeography {
       return if($prec && $d < $prec);
       $pol = GeoCheck::polygon($id);
       $d = int($d);
-      
+
       my $sug = GeoCheck::georef($lat, $lon, 'county');
       if($sug) {
         $dwc->addwarning("$d meters outside $county ($sug?)", "geography");

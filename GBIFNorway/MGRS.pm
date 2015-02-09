@@ -78,9 +78,10 @@ sub parse {
   my ($n, $n2) = $ns =~ /-/ ? split("-", $ns) : ($ns, $ns);
   my ($mgrs, $dn, $de);
 
-  if(!defined($n)) {
-    die "Missing northing";
-  }
+  die "Missing northing" if !defined($n);
+  die "Missing easting" if !defined($e);
+  die "Broken MGRS string" if !defined($e2);
+
   if(length($e) != length($n) || length($e2) != length($n2)) {
     die "Broken MGRS string";
   }
