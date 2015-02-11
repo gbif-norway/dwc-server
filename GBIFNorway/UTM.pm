@@ -25,6 +25,7 @@ sub parse {
   } elsif(/^(\d+)[A-Z](\d+),(\d+)$/) {
     ($zone, $easting, $northing) = ($1, $2, $3);
   } elsif(/^([\d-]+)[\s,]*([\d-]+)$/) {
+    die "..";
     ($easting, $northing) = ($1, $2);
   } elsif(/^sone (\d+): N:?(\d+)[\s,]+[EØ]:?(\d+)/i) {
     ($zone, $northing, $easting) = ($1, $2, $3);

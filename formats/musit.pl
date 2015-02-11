@@ -17,6 +17,8 @@ sub guess {
   local $_ = shift;
   if(/^$/) {
     "";
+  } elsif(/^\d{2}\w{3}\d+$/) {
+    "MGRS";
   } elsif(/^\w{2}\s*[\d\s,]+$/) {
     "MGRS";
   } elsif(/^[A-Za-z\-]{2,5}[\d\s\-\,]+$/) {
@@ -218,7 +220,7 @@ sub clean {
       $utm = GBIFNorway::UTM::parse($sone, $$dwc{verbatimCoordinates});
     };
     if($@) {
-      $dwc->adderror("Unable to parse UTM coordinates");
+      $dwc->addwarning("Unable to parse UTM coordinates");
     }
     if($utm) {
       $$dwc{coordinates} = $utm;

@@ -70,10 +70,10 @@ sub validategeography {
     my $prec = $$dwc{coordinateUncertaintyInMeters};
     my $pol;
 
-    my $mun = GeoCheck::georef($lat, $lon, 'municipality');
-    if($mun) {
-      $$dwc{municipality} = $mun;
-    }
+    #my $mun = GeoCheck::georef($lat, $lon, 'municipality');
+    #if($mun) {
+    #  $$dwc{municipality} = $mun;
+    #}
 
     if($$dwc{stateProvince} && $$dwc{county}) {
       my $county = $$dwc{county};
@@ -199,14 +199,18 @@ sub handlecoordinates {
     my ($zone, $e, $n) = split(/\s/, $$dwc{coordinates}, 3);
     if($$dwc{geodeticDatum} eq "European 1950") {
       my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone +ellps=intl +units=m +towgs84=-87,-98,-121");
-      my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
-      my $point = [$e, $n];
-      my ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
-      $$dwc{geodeticDatum} = "WGS84";
-      $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
-      $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
-      $dwc->addinfo("UTM coordinates converted to WGS84 latitude/longitude",
-        "coordinates");
+      if($ed50) {
+        my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
+        my $point = [$e, $n];
+        my ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
+        $$dwc{geodeticDatum} = "WGS84";
+        $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
+        $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
+        $dwc->addinfo("UTM coordinates converted to WGS84 latitude/longitude",
+          "coordinates");
+      } else {
+        $dwc->addwarning("Broken UTM coordinates");
+      }
     } else {
       my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone +units=m");
       my $wgs84 = Geo::Proj4->new(init => "epsg:4326");

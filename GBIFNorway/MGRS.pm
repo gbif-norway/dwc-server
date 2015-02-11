@@ -59,7 +59,9 @@ sub parse {
   my ($zones, $es, $ns);
   my @box;
 
-  if($raw =~ /^(\d+\D+)(\d+)$/) { # 32VNP500500
+  if($raw =~ /^(\d+\D+)(\d)$/) {
+    die "Broken MGRS string";
+  } elsif($raw =~ /^(\d+\D+)(\d+)$/) { # 32VNP500500
     my $n = length($2) / 2;
     $zones = $1;
     $es = substr($2, 0, $n);
@@ -120,6 +122,7 @@ sub parse {
       die "Unable to parse MGRS grid zone $z";
     }
   }
+  # die ".." if(!$n || !$e);
 
   if("$z$e$n" eq "$z2$e2$n2") {
     $dn = $distance{length($n)};
@@ -134,6 +137,10 @@ sub parse {
         $n1 = $n1 - ($distance{length($n)});
         $e1 = $e1 - ($distance{length($e)});
         my $lol = $distance{length($e)} * 2;
+
+        # ikke så veldig fin hack -,-
+        $e2-- if(length($e2) > length($e1));
+        $n2-- if(length($n2) > length($n1));
         my $mgrs_tl = sprintf("%s%05s%05s", $z, $e1, $n1);
         my $mgrs_tr = sprintf("%s%05s%05s", $z, $e2, $n1);
         my $mgrs_br = sprintf("%s%05s%05s", $z, $e2, $n2);
