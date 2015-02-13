@@ -27,13 +27,14 @@ sub triplet {
 }
 
 our @terms = (
-  "dateLastModified", "institutionCode", "collectionCode", "catalogNumber",
+  "occurrenceID",
+  "modified", "institutionCode", "collectionCode", "catalogNumber",
   "scientificName", "basisOfRecord",
   "kingdom", "phylum", "class", "order", "family", "genus",
   "specificEpithet", "infraspecificEpithet","scientificNameAuthorship",
   "identifiedBy", "dateIdentified",
   "typeStatus", "recordNumber", "fieldNumber", "recordedBy",
-  "year", "month", "day", "startDayOfYear", "eventTime",
+  "eventDate", "year", "month", "day", "startDayOfYear", "eventTime",
   "continent", "country", "stateProvince", "county", "municipality", "locality",
   "decimalLongitude", "decimalLatitude", "coordinateUncertaintyInMeters",
   "geodeticDatum",
@@ -44,7 +45,7 @@ our @terms = (
   "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
   "habitat", "footprintWKT",
   "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
-  "associatedMedia", "organismID"
+  "associatedMedia", "organismID", "individualID"
 );
 
 sub addinfo {

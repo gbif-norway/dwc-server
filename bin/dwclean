@@ -22,6 +22,7 @@ our %cleaners = ();
 do 'formats/musit.pl';
 do 'formats/nodwc.pl';
 do 'formats/dwc.pl';
+do 'formats/specify.pl';
 
 package main;
 
@@ -88,10 +89,12 @@ while (my $raw = $csv->fetch) {
   }
 
   if(!$opt_u) {
-    if($uniques{$cat}) {
-      $dwc->adderror("Duplicate catalogNumber", "core");
+    if($cat) {
+      if($uniques{$cat}) {
+        $dwc->adderror("Duplicate catalogNumber", "core");
+      }
+      $uniques{$cat} = 1;
     }
-    $uniques{$cat} = 1;
   }
 
   if($opt_d) {
