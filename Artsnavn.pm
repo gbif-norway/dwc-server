@@ -31,7 +31,7 @@ sub addtaxonomy {
     my $results = $q->search();
     if(@{$results} < 1) {
       my $l = scalar @{$results};
-      die("Couldn't find $genus in Artsnavnebasen");
+      die("Couldn't find $genus in Artsnavnebasen\n");
       return;
     } elsif(@{$results} > 1) {
       my $l = scalar @{$results};
@@ -48,7 +48,7 @@ sub addtaxonomy {
     $$dwc{class} = $$name{Klasse};
     $$dwc{phylum} = $$name{Rekke};
     $$dwc{kingdom} = $$name{Rike};
-    $dwc->addinfo("Added higher taxonomic ranks from Artsnavnebasen");
+    $dwc->addinfo("Added higher taxonomic ranks from Artsnavnebasen", "name");
   }
 }
 

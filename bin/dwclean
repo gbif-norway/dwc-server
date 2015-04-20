@@ -22,7 +22,10 @@ our %cleaners = ();
 do 'formats/musit.pl';
 do 'formats/nodwc.pl';
 do 'formats/dwc.pl';
+do 'formats/dwcm.pl';
+do 'formats/dugnad.pl';
 do 'formats/specify.pl';
+do 'formats/gbif.pl';
 
 package main;
 
@@ -30,8 +33,8 @@ package main;
 our $usage = "$0 [-ghu]\n";
 
 our ($opt_c, $opt_d, $opt_f, $opt_e, $opt_g, $opt_h, $opt_i, $opt_s, $opt_u);
-our ($opt_x, $opt_v, $opt_k, $opt_r);
-getopts("k:x:s:i:c:d:e:f:ghruv");
+our ($opt_x, $opt_v, $opt_k, $opt_r, $opt_m, $opt_b);
+getopts("k:x:s:i:c:d:e:f:ghruvmb:");
 
 if($opt_h) {
   print($usage) and exit;
@@ -68,8 +71,21 @@ my $csv = Parse::CSV->new(%options);
 my %uniques;
 my $errno = 0;
 
+my $nn = 0;
+
 while (my $raw = $csv->fetch) {
   my $dwc = DwC->new($raw, $csv->row);
+
+  if($opt_b) {
+    $$dwc{basisOfRecord} = $opt_b;
+    #$$dwc{occurrenceRemarks} = "$$dwc{institutionCode}:$$dwc{collectionCode}:$$dwc{catalogNumber}. $$dwc{occurrenceRemarks}";
+  }
+
+  if($opt_m) {
+    $nn = $nn + 1;
+    $$dwc{catalogNumber} = $nn;
+  }
+
   my $cat = $$dwc{catalogNumber};
   my $cleaner = $GBIFNorway::cleaners{$opt_f || "musit"};
 
@@ -105,45 +121,45 @@ while (my $raw = $csv->fetch) {
   $dwc->validatedates;
   $dwc->validateelevation;
 
-  my $tmp = $opt_r || 0;
-  eval {
-    Artsnavn::addtaxonomy($dwc, $opt_k, 1);
-  };
-  if ($@ && !$tmp) {
-    my $warning = $@ =~ s/\s+$//r =~ s/at.*//r;
-    $dwc->addwarning($warning, "name");
+  my $overwrite = 1;
+  if($opt_r) {
+    $overwrite = 0;
   }
+  eval {
+    Artsnavn::addtaxonomy($dwc, $opt_k, $overwrite);
+  };
+  $dwc->addwarning($@, "name") if $@;
 
   if($$dwc{country} && !$$dwc{continent}) {
     $$dwc{continent} = Geonames::continent($$dwc{country});
   }
 
   $dwc->handlecoordinates;
-  $dwc->validategeography if($$dwc{decimalLatitude} && $$dwc{decimalLongitude});
+  if($$dwc{decimalLatitude} && $$dwc{decimalLongitude}) {
+    $dwc->validategeography;
+  }
 
-# flytt inn i DwC~?
+  # flytt inn i DwC~?
   my $triplet = $dwc->triplet;
+  my $row = $$dwc{_row};
   for my $error (@{$$dwc{errors}}) {
     $errno++;
-    say STDERR "$errno\terror\t$triplet\t$$dwc{_row}\t$error";
+    say STDERR "$errno\terror\t$triplet\t$row\t$$error[0]\t$$error[1]";
   }
-  for my $error (@{$$dwc{warnings}}) {
+  for my $warning (@{$$dwc{warnings}}) {
     $errno++;
-    say STDERR "$errno\twarning\t$triplet\t$$dwc{_row}\t$error";
+    say STDERR "$errno\twarning\t$triplet\t$row\t$$warning[0]\t$$warning[1]";
   }
 
   if($opt_v) {
-    for my $error (@{$$dwc{info}}) {
+    for my $info (@{$$dwc{info}}) {
       $errno++;
-      say STDERR "$errno\tinfo\t$triplet\t$$dwc{_row}\t$error";
+      say STDERR "$errno\tinfo\t$triplet\t$row\t$$info[0]\t$$info[1]";
     }
   }
   next if (@{$$dwc{errors}});
 
   $dwc->printcsv(\*STDOUT, \@DwC::terms);
-
-  # se etter kommune og sette midtpunkt?
-  # test mot land
 }
 
 if($csv->errstr) {

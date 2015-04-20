@@ -41,26 +41,27 @@ our @terms = (
   "minimumElevationInMeters", "maximumElevationInMeters",
   "minimumDepthInMeters", "maximumDepthInMeters",
   "sex", "preparations", "individualCount",
-  "otherCatalogNumbers",
+  "otherCatalogNumbers", "eventID",
   "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
   "habitat", "footprintWKT",
   "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
-  "associatedMedia", "organismID", "individualID"
+  "associatedMedia", "organismID", "individualID", "datasetKey", "license"
 );
 
 sub addinfo {
-  my $dwc = shift;
-  push($$dwc{info}, shift);
+  my ($dwc, $info, $type) = @_;
+  push($$dwc{info}, [ $info, $type ]);
 }
 
 sub adderror {
-  my $dwc = shift;
-  push($$dwc{errors}, shift);
+  my ($dwc, $error, $type) = @_;
+  push($$dwc{errors}, [ $error, $type ]);
 }
 
 sub addwarning {
-  my $dwc = shift;
-  push($$dwc{warnings}, shift);
+  my ($dwc, $warning, $type) = @_;
+  $warning =~ s/\n$//;
+  push($$dwc{warnings}, [ $warning, $type ]);
 }
 
 # fix
@@ -70,6 +71,10 @@ sub validategeography {
     my ($lat, $lon) = ($$dwc{decimalLatitude}, $$dwc{decimalLongitude});
     my $prec = $$dwc{coordinateUncertaintyInMeters};
     my $pol;
+
+    if ($lat == 0 && $lon == 0) {
+      return;
+    }
 
     #my $mun = GeoCheck::georef($lat, $lon, 'municipality');
     #if($mun) {
@@ -98,11 +103,11 @@ sub validategeography {
 
       my $sug = GeoCheck::georef($lat, $lon, 'county');
       if($sug) {
-        $dwc->addwarning("$d meters outside $county ($sug?)", "geography");
+        $dwc->addwarning("$d meters outside $county ($sug?)", "geo");
       } else {
-        $dwc->addwarning("$d meters outside $county", "geography");
+        $dwc->addwarning("$d meters outside $county", "geo");
       }
-      $dwc->addinfo($pol) if $pol;
+      $dwc->addinfo($pol, "geo") if $pol;
     }
     if($$dwc{stateProvince}) {
       my $id = "stateprovince_" . $$dwc{stateProvince};
@@ -114,18 +119,28 @@ sub validategeography {
       my $sp = $$dwc{stateProvince};
       my $sug = GeoCheck::georef($lat, $lon, 'stateprovince');
       if($sug) {
-        $dwc->addwarning("$d meters outside $sp ($sug?)", "geography");
+        $dwc->addwarning("$d meters outside $sp ($sug?)", "geo");
       } else {
-        $dwc->addwarning("$d meters outside $sp", "geography");
+        $dwc->addwarning("$d meters outside $sp", "geo");
       }
-      $dwc->addinfo($pol) if $pol;
+      $dwc->addinfo($pol, "geo") if $pol;
     }
   };
 }
 
 sub validatebasisofrecord {
   my $dwc = shift;
-  if($$dwc{basisOfRecord} !~ /^MaterialSample|Preserved specimen|Observation$/i) {
+  if($$dwc{basisOfRecord} eq "PRESERVED_SPECIMEN") {
+    $$dwc{basisOfRecord} = "Preserved specimen";
+  } elsif($$dwc{basisOfRecord} eq "FOSSIL_SPECIMEN") {
+    $$dwc{basisOfRecord} = "Fossil specimen";
+  } elsif($$dwc{basisOfRecord} eq "LIVING_SPECIMEN") {
+    $$dwc{basisOfRecord} = "Living specimen";
+  } elsif($$dwc{basisOfRecord} eq "UNKNOWN") {
+    $$dwc{basisOfRecord} = "Unknown";
+  }
+
+  if($$dwc{basisOfRecord} !~ /^MaterialSample|Living specimen|Preserved specimen|Observation|Unknown|Fossil specimen$/i) {
     $dwc->addwarning("Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
   }
 }
@@ -161,11 +176,11 @@ sub handlecoordinates {
   if($$dwc{decimalLatitude} || $$dwc{decimalLongitude}) {
     $dwc->validatecoordinates;
   } elsif($$dwc{verbatimCoordinateSystem} eq "MGRS") {
-    my $mgrs = $$dwc{coordinates};
+    my $mgrs = $$dwc{coordinates} || $$dwc{verbatimCoordinates};
     my ($lat, $lon);
 
     eval {
-      if($$dwc{geodeticDatum} eq "European 1950") {
+      if($$dwc{geodeticDatum} eq "European 1950" || $$dwc{verbatimSRS} eq "ED50") {
         my ($zone, $h, $e, $n) = MGRS::mgrs_to_utm($mgrs);
         my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone$h +ellps=intl +units=m +towgs84=-87,-98,-121");
         my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
@@ -176,7 +191,7 @@ sub handlecoordinates {
         $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
         $dwc->addinfo(
           "MGRS (ED-50) coordinates converted to WGS84 latitude/longitude", 
-          "coordinates"
+          "geo"
         );
       } else {
         my ($zone, $h, $e, $n) = MGRS::mgrs_to_utm($mgrs);
@@ -186,19 +201,20 @@ sub handlecoordinates {
         ($lon, $lat) = @{$utm->transform($wgs84, $point)};
 
         $dwc->addinfo("MGRS coordinates converted to WGS84 latitude/longitude",
-          "coordinates");
+          "geo");
         $$dwc{geodeticDatum} = "WGS84";
         $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
         $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
       }
     };
     if($@) {
-      $dwc->addwarning("Failed to convert MGRS coordinates: $mgrs");
+      $dwc->addwarning("Failed to convert MGRS coordinates: $mgrs", "geo");
       ($lat, $lon) = ("", "");
     }
   } elsif($$dwc{verbatimCoordinateSystem} eq "UTM") {
-    my ($zone, $e, $n) = split(/\s/, $$dwc{coordinates}, 3);
-    if($$dwc{geodeticDatum} eq "European 1950") {
+    my $coordinates = $$dwc{coordinates} || $$dwc{verbatimCoordinates};
+    my ($zone, $e, $n) = split(/\s/, $coordinates, 3);
+    if($$dwc{geodeticDatum} eq "European 1950" || $$dwc{verbatimSRS} eq "ED50") {
       my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone +ellps=intl +units=m +towgs84=-87,-98,-121");
       if($ed50) {
         my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
@@ -208,20 +224,30 @@ sub handlecoordinates {
         $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
         $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
         $dwc->addinfo("UTM coordinates converted to WGS84 latitude/longitude",
-          "coordinates");
+          "geo");
       } else {
-        $dwc->addwarning("Broken UTM coordinates");
+        $dwc->addwarning("Broken UTM coordinates", "geo");
       }
     } else {
       my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone +units=m");
-      my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
-      my $point = [$e, $n];
-      my ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
-      $$dwc{geodeticDatum} = "WGS84";
-      $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
-      $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
-      $dwc->addinfo("UTM coordinates converted to WGS84 latitude/longitude",
-        "coordinates");
+
+      if($ed50) {
+
+        my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
+        my $point = [$e, $n];
+        if(!$e || !$n) {
+          $dwc->addwarning("Missing coordinates", "geo");
+        } else {
+          my ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
+          $$dwc{geodeticDatum} = "WGS84";
+          $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
+          $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
+          $dwc->addinfo("UTM coordinates converted to WGS84 latitude/longitude",
+            "geo");
+        }
+      } else {
+        $dwc->addwarning("Invalid UTM zone: $zone", "geo");
+      }
     }
   } elsif($$dwc{verbatimCoordinateSystem} eq "RT90") {
     eval {
@@ -255,10 +281,11 @@ sub handlecoordinates {
       $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
       $$dwc{decimalLongitude} = sprintf("%.5f", $lon);
       $dwc->addinfo("RT90 (Rikets nät) coordinates converted to WGS84 lat/lon",
-        "coordinates");
+        "geo");
     };
     if($@) {
-      $dwc->addwarning("Unable to convert RT90 (Rikets nät) coordinates");
+      $dwc->addwarning("Unable to convert RT90 (Rikets nät) coordinates",
+        "geo");
     }
   }
 }
@@ -275,15 +302,6 @@ sub validateelevation {
   if($mine && $maxe && $mine > $maxe) {
     $dwc->addwarning("Elevation problem", "elevation");
   }
-}
-
-sub printjson {
-  my $me = shift;
-  my $fields = shift;
-  my $json = JSON::XS->new->pretty->convert_blessed(1);
-  my %subset;
-  @subset{@$fields} = @{$me}{@$fields};
-  say($json->encode(\%subset));
 }
 
 sub printcsv {

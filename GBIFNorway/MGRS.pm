@@ -24,6 +24,9 @@ sub expand {
 sub zone {
   my $raw = shift;
   $raw = uc $raw;
+  if ($raw =~ /^\d{2}\w$/) {
+    return $raw;
+  }
   if ($raw =~ /^JH|JJ|JK|JL|JM|JN|JP|JQ|JR|KH|KJ|KK|KL|KM|KN|KP|KQ|KR|KS|LH|LJ|LK|LL|LM|LN|LP|LQ|LR|MH|MJ|MK|ML|MM|MN|MP|MQ|MR|NH|NJ|NK|NL|NM|NN|NP|NR|NQ|PH|PJ|PK|PL|PM|PN|PP|PR|PQ$/) {
     return "32V";
   }
@@ -55,12 +58,27 @@ sub zone {
 }
 
 sub parse {
-  my $raw = shift;
+  my $raw = uc shift;
   my ($zones, $es, $ns);
   my @box;
 
   if($raw =~ /^(\d+\D+)(\d)$/) {
     die "Broken MGRS string";
+  } elsif($raw =~ /^(\d{2}\D\s*\D{2}-\D{2})\s*([\d\-,]+)$/) {
+    my $n = length($2) / 2;
+    $zones = $1;
+    ($es, $ns) = split(/,/, $2);
+    $zones =~ s/\s//g;
+  } elsif($raw =~ /^(\d{2}\D{3})\s*(\d+)$/) {
+    my $n = length($2) / 2;
+    $zones = $1;
+    $es = substr($2, 0, $n);
+    $ns = substr($2, $n, $n);
+  } elsif($raw =~ /^(\d{2}\D\s*\D{2})\s*([\d\-,]+)$/) {
+    my $n = length($2) / 2;
+    $zones = $1;
+    ($es, $ns) = split(/,/, $2);
+    $zones =~ s/\s//g;
   } elsif($raw =~ /^(\d+\D+)(\d+)$/) { # 32VNP500500
     my $n = length($2) / 2;
     $zones = $1;

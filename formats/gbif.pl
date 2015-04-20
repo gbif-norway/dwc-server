@@ -1,7 +1,15 @@
 use strict;
 use utf8;
 
-package GBIFNorway::DwC;
+package GBIFNorway::GBIF;
+
+our %names;
+open NAMES, '<', "tmp/navn.txt";
+while(<NAMES>) {
+  my ($name, $uuid) = split /\t/;
+  $uuid =~ s/\s$//;
+  $names{$uuid} = $name;
+}
 
 sub filter {
   return $_;
@@ -29,11 +37,15 @@ sub clean {
     $$dwc{scientificName} = $$dwc{_scientificName};
   }
 
+  my $name = $names{$$dwc{datasetKey}};
+  $$dwc{occurrenceRemarks} = "$name (http://gbif.org/dataset/$$dwc{datasetKey}). $$dwc{occurrenceRemarks}";
+  $$dwc{occurrenceRemarks} =~ s/\s+$//;
+
   return $dwc;
 }
 
-$GBIFNorway::names{dwc} = 1;
-$GBIFNorway::filters{dwc} = \&GBIFNorway::DwC::filter;
-$GBIFNorway::cleaners{dwc} = \&GBIFNorway::DwC::clean;
+$GBIFNorway::names{gbif} = 1;
+$GBIFNorway::filters{gbif} = \&GBIFNorway::GBIF::filter;
+$GBIFNorway::cleaners{gbif} = \&GBIFNorway::GBIF::clean;
 
 1;
