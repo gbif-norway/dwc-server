@@ -62,7 +62,7 @@ sub filter {
     'verbatimCoordinates'       =>  $$_[68],
     'verbatimSRS'               =>  $$_[69],
 
-    'occurrenceID'              =>  $$_[73],
+    'occurrenceID'              =>  $$_[-1],
     
     # hm
     'decimalLongitude'          =>  "",

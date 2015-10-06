@@ -9,14 +9,14 @@ sub filter {
 
 sub clean {
   my $dwc = shift;
-  if($$dwc{eventDate} && $$dwc{eventDate} =~ /^(\d{4})-(\d{2})-(\d{2})$/) {
+  if($$dwc{eventDate} && $$dwc{eventDate} =~ /\-/) {
     my ($y, $m, $d) = split /-/, $$dwc{eventDate};
     $$dwc{year} = $y;
     $$dwc{month} = $m;
     $$dwc{day} = $d;
   }
   if($$dwc{dateIdentified}
-    && $$dwc{dateIdentified} =~ /^(\d{4})-(\d{2})-(\d{2})$/) {
+    && $$dwc{dateIdentified} =~ /\-/) {
     my ($y, $m, $d) = split /-/, $$dwc{dateIdentified};
     $$dwc{yearIdentified} = $y;
     $$dwc{monthIdentified} = $m;

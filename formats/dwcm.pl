@@ -17,9 +17,17 @@ sub guess {
   local $_ = shift;
   if(/^$/) {
     "";
+  } elsif(/^\d{2}\w{1}\s\w{2}\s\d+,\s\d+$/) {
+    "MGRS";
   } elsif(/^\d{2}\w{1}\s\w{2}\s[\d\-,]+$/) {
     "MGRS";
   } elsif(/^\d{2}\w{1}\s\w{2}-\w{2}\s[\d\-,]+$/) {
+    "MGRS";
+  } elsif(/^\d{2}\s*\w{2}\s*[\d\-\,]+$/) {
+    "MGRS";
+  } elsif(/^\d{2}\s*\w{2}-\w{2}\s*[\d\-\,]+$/) {
+    "MGRS";
+  } elsif(/^\d{2}\w\w{2}[\d,]+\w{2}[\d,]+$/) {
     "MGRS";
   } elsif(/^[\d\.°,]+\s*[NSEW]\s*[\d\.°,]+\s*[NSEW]$/) {
     "decimal degrees";
@@ -33,13 +41,17 @@ sub guess {
     "degrees minutes seconds";
   } elsif(/^\d+°\s*[\d\.]+'\s*[NSEW]\s+\d+°\s*[\d\.]+'\s*[NSEW]$/) {
     "degrees minutes seconds";
+  } elsif(/(\d+)[A-Z]\s*[A-Z]?\s*(\d+),(\d+)/) {
+    "UTM";
   } elsif(/^[NØ]\d+[\s,]+[NØ]\d+\.?$/) {
     "UTM";
   } elsif(/UTM/) {
     "UTM";
   } elsif(/^Euref\. 89 (\d+)/) {
     "UTM (Euref.89)";
-  } elsif(/^rikets nät/i) {
+  } elsif(/^\s*rikets nät/i) {
+    "Rikets nät";
+  } elsif(/^\s*RN/i) {
     "Rikets nät";
   } else {
     "Unknown";
@@ -66,6 +78,20 @@ sub parsedate {
 sub clean {
   my $dwc = shift;
 
+  if($$dwc{eventDate} && $$dwc{eventDate} =~ /\-/) {
+    my ($y, $m, $d) = split /-/, $$dwc{eventDate};
+    $$dwc{year} = $y if $y != 0;
+    $$dwc{month} = $m if $m != 0;
+    $$dwc{day} = $d if $d != 0;
+  }
+  if($$dwc{dateIdentified}
+    && $$dwc{dateIdentified} =~ /\-/) {
+    my ($y, $m, $d) = split /-/, $$dwc{dateIdentified};
+    $$dwc{yearIdentified} = $y if $y != 0;
+    $$dwc{monthIdentified} = $m if $y != 0;
+    $$dwc{dayIdentified} = $d if $y != 0;
+  }
+
   if($$dwc{NArtObsID}) {
     $dwc->adderror("Already provided to Artskart and the GBIF network through Artsobservasjoner", "core");
   }
@@ -84,10 +110,10 @@ sub clean {
       if($mgrs) {
         $$dwc{verbatimCoordinateSystem} = "MGRS";
         $$dwc{coordinates} = uc $mgrs;
-        if($d > $$dwc{coordinateUncertaintyInMeters}) {
-          my $warning = "Coordinate uncertainty. $$dwc{coordinateUncertaintyInMeters} / $d";
-          $dwc->addwarning($warning, "geo");
-        }
+        #if($d > $$dwc{coordinateUncertaintyInMeters}) {
+          #my $warning = "Coordinate uncertainty. $$dwc{coordinateUncertaintyInMeters} / $d";
+          #$dwc->addwarning($warning, "geo");
+          #}
         # $$dwc{coordinateUncertaintyInMeters} = $d;
         $$dwc{latitude} = ""; $$dwc{longitude} = "";
         if(@b) {
@@ -118,9 +144,8 @@ sub clean {
     }
   } elsif($system eq "UTM") {
     my $utm;
-    my $sone = $$dwc{UTMsone};
     eval {
-      $utm = GBIFNorway::UTM::parse($sone, $$dwc{verbatimCoordinates});
+      $utm = GBIFNorway::UTM::parse("", $$dwc{verbatimCoordinates});
     };
     if($@) {
       $dwc->addwarning("Unable to parse UTM coordinates", "geo");

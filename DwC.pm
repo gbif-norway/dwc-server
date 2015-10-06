@@ -44,6 +44,7 @@ our @terms = (
   "otherCatalogNumbers", "eventID",
   "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
   "habitat", "footprintWKT",
+  "verbatimLatitude", "verbatimLongitude",
   "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
   "associatedMedia", "organismID", "individualID", "datasetKey", "license"
 );
@@ -131,16 +132,18 @@ sub validategeography {
 sub validatebasisofrecord {
   my $dwc = shift;
   if($$dwc{basisOfRecord} eq "PRESERVED_SPECIMEN") {
-    $$dwc{basisOfRecord} = "Preserved specimen";
+    $$dwc{basisOfRecord} = "PreservedSpecimen";
+  } elsif($$dwc{basisOfRecord} eq "Preserved specimen") {
+    $$dwc{basisOfRecord} = "PreservedSpecimen";
   } elsif($$dwc{basisOfRecord} eq "FOSSIL_SPECIMEN") {
-    $$dwc{basisOfRecord} = "Fossil specimen";
+    $$dwc{basisOfRecord} = "FossilSpecimen";
   } elsif($$dwc{basisOfRecord} eq "LIVING_SPECIMEN") {
-    $$dwc{basisOfRecord} = "Living specimen";
+    $$dwc{basisOfRecord} = "LivingSpecimen";
   } elsif($$dwc{basisOfRecord} eq "UNKNOWN") {
     $$dwc{basisOfRecord} = "Unknown";
   }
 
-  if($$dwc{basisOfRecord} !~ /^MaterialSample|Living specimen|Preserved specimen|Observation|Unknown|Fossil specimen$/i) {
+  if($$dwc{basisOfRecord} !~ /^MaterialSample|Living specimen|PreservedSpecimen|Observation|Unknown|Fossil specimen$/i) {
     $dwc->addwarning("Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
   }
 }
@@ -211,6 +214,11 @@ sub handlecoordinates {
       $dwc->addwarning("Failed to convert MGRS coordinates: $mgrs", "geo");
       ($lat, $lon) = ("", "");
     }
+  } elsif($$dwc{verbatimCoordinateSystem} eq "degrees minutes seconds") {
+    my $raw = "$$dwc{verbatimLongitude} $$dwc{verbatimLatitude}";
+    my ($lat, $lon) = GBIFNorway::LatLon::parsedeg($raw);
+    $$dwc{decimalLongitude} = $lon;
+    $$dwc{decimalLatitude} = $lat;
   } elsif($$dwc{verbatimCoordinateSystem} eq "UTM") {
     my $coordinates = $$dwc{coordinates} || $$dwc{verbatimCoordinates};
     my ($zone, $e, $n) = split(/\s/, $coordinates, 3);

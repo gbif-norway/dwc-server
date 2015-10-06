@@ -63,8 +63,15 @@ sub parse {
   my @box;
 
   if($raw =~ /^(\d+\D+)(\d)$/) {
-    die "Broken MGRS string";
-  } elsif($raw =~ /^(\d{2}\D\s*\D{2}-\D{2})\s*([\d\-,]+)$/) {
+    die "Broken MGRS string.";
+  } elsif($raw =~ /^(\d{2}\w)\s*(\w{2})(\d+),(\w{2})(\d+)$/) {
+    $zones = "$1$2-$1$4";
+    my ($a, $b) = ($3, $5);
+    my $l1 = length($a) / 2;
+    my $l2 = length($b) / 2;
+    $es = substr($a, 0, $l1) . "-" . substr($b, 0, $l2);
+    $ns = substr($a, $l1, $l1) . "-" . substr($b, $l2, $l2);
+  } elsif($raw =~ /^(\d{2}\w\s*\D{2}-\D{2})\s*([\d\-,]+)$/) {
     my $n = length($2) / 2;
     $zones = $1;
     ($es, $ns) = split(/,/, $2);
@@ -74,12 +81,19 @@ sub parse {
     $zones = $1;
     $es = substr($2, 0, $n);
     $ns = substr($2, $n, $n);
-  } elsif($raw =~ /^(\d{2}\D\s*\D{2})\s*([\d\-,]+)$/) {
+  } elsif($raw =~ /^(\d{2}\w\s*\D{2})\s*([\d\s\-,]+)$/) {
+    my $n = length($2) / 2;
+    $zones = $1;
+    my $coords = $2;
+    $coords =~ s/\s//;
+    ($es, $ns) = split(/,/, $coords);
+    $zones =~ s/\s//g;
+  } elsif($raw =~ /^(\d{2}\s\D{2})\s*([\d\s\-,]+)$/) {
     my $n = length($2) / 2;
     $zones = $1;
     ($es, $ns) = split(/,/, $2);
-    $zones =~ s/\s//g;
-  } elsif($raw =~ /^(\d+\D+)(\d+)$/) { # 32VNP500500
+    $zones =~ s/\s/?/g;
+  } elsif($raw =~ /^(\d+\w+)([\d\,]+)$/) { # 32VNP500500
     my $n = length($2) / 2;
     $zones = $1;
     $es = substr($2, 0, $n);
@@ -92,6 +106,8 @@ sub parse {
   } else {
     ($zones, $es, $ns) = split(/[\s\,]+/, $raw);
   }
+
+  die "Broken MGRS string" if !defined($ns);
 
   my ($z, $z2) = $zones =~ /-/ ? split("-", $zones) : ($zones, $zones);
   my ($e, $e2) = $es =~ /-/ ? split("-", $es) : ($es, $es);
