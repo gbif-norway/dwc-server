@@ -9,8 +9,9 @@ use open qw/:std :utf8/;
 use Getopt::Std;
 use Parse::CSV;
 
-use Artsnavn;
-use Geonames;
+do 'Artsnavn.pm';
+
+#use Geonames;
 use DwC;
 
 package GBIFNorway;
@@ -114,7 +115,7 @@ while (my $raw = $csv->fetch) {
   }
 
   if($opt_d) {
-    $$dwc{dateLastModified} = $opt_d;
+    $$dwc{modified} = $opt_d;
   }
 
   $dwc->validatebasisofrecord;
@@ -130,9 +131,12 @@ while (my $raw = $csv->fetch) {
   };
   $dwc->addwarning($@, "name") if $@;
 
-  if($$dwc{country} && !$$dwc{continent}) {
-    $$dwc{continent} = Geonames::continent($$dwc{country});
-  }
+  $$dwc{modified} = $$dwc{dateLastModified} if $$dwc{dateLastModified};
+  $$dwc{modified} = $$dwc{'dcterms:modified'} if $$dwc{'dcterms:modified'};
+
+  #if($$dwc{country} && !$$dwc{continent}) {
+  #  $$dwc{continent} = Geonames::continent($$dwc{country});
+  #}
 
   $dwc->handlecoordinates;
   if($$dwc{decimalLatitude} && $$dwc{decimalLongitude}) {

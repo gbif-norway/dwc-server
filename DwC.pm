@@ -1,13 +1,12 @@
 use utf8;
+use 5.14.0;
 
 use DateTime;
 use POSIX;
-use Geo::Coordinates::UTM;
+use Geo::Coordinates::UTM::XS;
+use Geo::Coordinates::MGRS::XS;
 use Geo::Proj4;
-use MGRS;
 use GeoCheck;
-
-use utf8;
 
 package DwC;
 
@@ -38,8 +37,8 @@ our @terms = (
   "continent", "country", "stateProvince", "county", "municipality", "locality",
   "decimalLongitude", "decimalLatitude", "coordinateUncertaintyInMeters",
   "geodeticDatum",
-  "minimumElevationInMeters", "maximumElevationInMeters",
-  "minimumDepthInMeters", "maximumDepthInMeters",
+  "verbatimElevation", "minimumElevationInMeters", "maximumElevationInMeters",
+  "verbatimDepth", "minimumDepthInMeters", "maximumDepthInMeters",
   "sex", "preparations", "individualCount",
   "otherCatalogNumbers", "eventID",
   "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
@@ -51,18 +50,18 @@ our @terms = (
 
 sub addinfo {
   my ($dwc, $info, $type) = @_;
-  push($$dwc{info}, [ $info, $type ]);
+  push(@{$$dwc{info}}, [ $info, $type ]);
 }
 
 sub adderror {
   my ($dwc, $error, $type) = @_;
-  push($$dwc{errors}, [ $error, $type ]);
+  push(@{$$dwc{errors}}, [ $error, $type ]);
 }
 
 sub addwarning {
   my ($dwc, $warning, $type) = @_;
   $warning =~ s/\n$//;
-  push($$dwc{warnings}, [ $warning, $type ]);
+  push(@{$$dwc{warnings}}, [ $warning, $type ]);
 }
 
 # fix
@@ -237,16 +236,16 @@ sub handlecoordinates {
         $dwc->addwarning("Broken UTM coordinates", "geo");
       }
     } else {
-      my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone +units=m");
+      my $proj = Geo::Proj4->new("+proj=utm +zone=$zone +units=m +ellps=WGS84");
 
-      if($ed50) {
+      if($proj) {
 
         my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
         my $point = [$e, $n];
         if(!$e || !$n) {
           $dwc->addwarning("Missing coordinates", "geo");
         } else {
-          my ($lon, $lat) = @{$ed50->transform($wgs84, $point)};
+          my ($lon, $lat) = @{$proj->transform($wgs84, $point)};
           $$dwc{geodeticDatum} = "WGS84";
           $$dwc{decimalLatitude} = sprintf("%.5f", $lat);
           $$dwc{decimalLongitude} = sprintf("%.5f", $lon);

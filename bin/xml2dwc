@@ -11,29 +11,42 @@ my $dwc = XMLin(\*STDIN, ForceArray => ['dwr:SimpleDarwinRecord']);
 
 my $records = $$dwc{'dwr:SimpleDarwinRecord'};
 
-my @headers = (
-  'type', 'datasetID', 'ownerInstitutionCode', 'materialSampleID',
-  'collectionID', 'occurrenceID',
-  'institutionCode', 'collectionCode', 'catalogNumber',
-  'eventDate', 'nomenclaturalCode',
-  'basisOfRecord', 'recordedBy',
-  'dateLastModified', 'dateIdentified', 'identifiedBy',
-  'lifestage', 'sex', 'preparations',
-  'continent',
-  'countryCode', 'country', 'stateProvince', 'county', 'locality',
-  'geodeticDatum', 'decimalLatitude', 'decimalLongitude',
-  'kingdom', 'order', 'class', 'family', 'genus', 
-  'scientificName', 'specificEpithet', 'infraspecificEpithet',
-  'recordNumber', 'organismID',
-  'rightsHolder',
+my @dwcterms = (
+  'dcterms:type', 'dcterms:modified', 'dcterms:rightsHolder',
+  'collectionID', 'datasetID', 'institutionCode', 'collectionCode',
+  'ownerInstitutionCode',
+  'basisOfRecord', 'occurrenceID', 'catalogNumber', 'recordNumber',
+
+  'recordedBy', 'sex', 'lifeStage', 'preparations', 'organismID',
+  'materialSampleID', 'eventDate', 'continent', 'country', 'countryCode',
+  'stateProvince', 'county', 'locality', 'decimalLatitude', 'decimalLongitude',
+  'coordinateUncertaintyInMeters', 'coordinatePrecision',
+  'minimumElevationInMeters', 'maximumElevationInMeters',
+  'geodeticDatum', 'identifiedBy', 'dateIdentified', 'scientificName',
+
+  'kingdom', 'class', 'order', 'family',
+  'genus', 'specificEpithet', 'infraspecificEpithet',
+  'waterBody', 'identificationQualifier',
+
+  'nomenclaturalCode',
+  'informationWithheld'
 );
 
-my @dwcheaders = map {
-  'dwc:' . $_;
-} @headers;
+my @headers = map {
+  $_ =~ /:/ ? $_ : 'dwc:' . $_;
+} @dwcterms;
 
-say STDOUT join("\t", @headers);
+# for my $record (@$records) {
+#   for my $term (@headers) {
+#     delete $$record{$term};
+#   }
+#   while (my ($k, $v) = each($record)) {
+#     say STDERR "$k not mapped";
+#   }
+# }
+
+say STDOUT join("\t", @dwcterms);
 for my $record (@$records) {
-  say STDOUT join("\t", @{$record}{@dwcheaders});
+  say STDOUT join("\t", @{$record}{@headers});
 }
 

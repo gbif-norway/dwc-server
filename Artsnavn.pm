@@ -24,14 +24,14 @@ sub addtaxonomy {
     $name = $cache{$genus};
   } else {
     my $q = TokyoCabinet::TDBQRY->new($db);
-    if($kingdom) {
+    if($kingdom && $kingdom ne "All") {
       $q->addcond("Rike", $q->QCSTREQ, $kingdom);
     }
     $q->addcond("Slekt", $q->QCSTREQ, $genus);
     my $results = $q->search();
     if(@{$results} < 1) {
       my $l = scalar @{$results};
-      die("Couldn't find $genus in Artsnavnebasen\n");
+      die("Couldn't find $genus $epithet in Artsnavnebasen\n");
       return;
     } elsif(@{$results} > 1) {
       my $l = scalar @{$results};
