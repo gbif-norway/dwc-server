@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+use strict;
+use utf8;
+
+binmode(STDOUT, ":utf8");
+
+use XML::Simple;
+
+my $dwc = XMLin(\*STDIN, ForceArray => ['dwr:SimpleDarwinRecord']);
+
+my $records = $$dwc{'dwr:SimpleDarwinRecord'};
+
+my @headers = (
+  'type', 'datasetID', 'ownerInstitutionCode', 'materialSampleID',
+  'collectionID', 'occurrenceID',
+  'institutionCode', 'collectionCode', 'catalogNumber',
+  'eventDate', 'nomenclaturalCode',
+  'basisOfRecord', 'recordedBy',
+  'dateLastModified', 'dateIdentified', 'identifiedBy',
+  'lifestage', 'sex', 'preparations',
+  'continent',
+  'countryCode', 'country', 'stateProvince', 'county', 'locality',
+  'geodeticDatum', 'decimalLatitude', 'decimalLongitude',
+  'kingdom', 'order', 'class', 'family', 'genus', 
+  'scientificName', 'specificEpithet', 'infraspecificEpithet',
+  'recordNumber', 'organismID',
+  'rightsHolder',
+);
+
+my @dwcheaders = map {
+  'dwc:' . $_;
+} @headers;
+
+say STDOUT join("\t", @headers);
+for my $record (@$records) {
+  say STDOUT join("\t", @{$record}{@dwcheaders});
+}
+

@@ -115,7 +115,7 @@ sub clean {
           #$dwc->addwarning($warning, "geo");
           #}
         # $$dwc{coordinateUncertaintyInMeters} = $d;
-        $$dwc{latitude} = ""; $$dwc{longitude} = "";
+        $$dwc{decimalLatitude} = ""; $$dwc{decimalLongitude} = "";
         if(@b) {
           my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
           if($$dwc{verbatimSRS} eq "ED50") {
@@ -194,7 +194,7 @@ sub clean {
     }
     $$dwc{verbatimCoordinateSystem} = "RT90";
   } elsif($system =~ "Unknown") {
-    $dwc->addwarning("Unknown coordinate system ($$dwc{verbatimCoordinates})", "geo");
+    $dwc->addwarning("Unknown coordinate system", "geo");
     $$dwc{decimalLatitude} = "";
     $$dwc{decimalLongitude} = "";
     $$dwc{coordinateUncertaintyInMeters} = "";

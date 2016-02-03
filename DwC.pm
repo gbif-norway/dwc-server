@@ -4,7 +4,7 @@ use 5.14.0;
 use DateTime;
 use POSIX;
 use Geo::Coordinates::UTM::XS;
-use Geo::Coordinates::MGRS::XS;
+use Geo::Coordinates::MGRS::XS qw(:all);
 use Geo::Proj4;
 use GeoCheck;
 
@@ -183,7 +183,7 @@ sub handlecoordinates {
 
     eval {
       if($$dwc{geodeticDatum} eq "European 1950" || $$dwc{verbatimSRS} eq "ED50") {
-        my ($zone, $h, $e, $n) = MGRS::mgrs_to_utm($mgrs);
+        my ($zone, $h, $e, $n) = ::mgrs_to_utm($mgrs);
         my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone$h +ellps=intl +units=m +towgs84=-87,-98,-121");
         my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
         my $point = [$e, $n];
@@ -196,7 +196,7 @@ sub handlecoordinates {
           "geo"
         );
       } else {
-        my ($zone, $h, $e, $n) = MGRS::mgrs_to_utm($mgrs);
+        my ($zone, $h, $e, $n) = ::mgrs_to_utm($mgrs);
         my $utm = Geo::Proj4->new("+proj=utm +zone=$zone$h +units=m");
         my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
         my $point = [$e, $n];
