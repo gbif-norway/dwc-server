@@ -96,6 +96,10 @@ sub clean {
     $dwc->adderror("Already provided to Artskart and the GBIF network through Artsobservasjoner", "core");
   }
 
+  if($$dwc{datasetName}) {
+    $$dwc{collectionCode} = $$dwc{datasetName};
+  }
+
   $$dwc{'dcterms:modified'} = parsedate($$dwc{'dcterms:modified'});
 
   my $system = guess($$dwc{verbatimCoordinates});
