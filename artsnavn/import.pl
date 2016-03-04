@@ -29,8 +29,11 @@ if(!$db->open("artsnavn.db", $db->OWRITER | $db->OCREAT)) {
   die("error: " . $db->errmsg($ecode) . "\n");
 }
 
+my $n = 0;
+
 while (my $row = $csv->fetch) {
   my $key = "$$row{Rike}-$$row{PK_LatinskNavnID}";
+  printf("$key\n");
 
   next if($$row{Art});
   next if($$row{Underslekt});
@@ -46,5 +49,9 @@ if($csv->errstr) {
 }
 
 $db->setindex("Rike", $db->ITLEXICAL);
+$db->setindex("Rekke", $db->ITLEXICAL);
+$db->setindex("Klasse", $db->ITLEXICAL);
+$db->setindex("Orden", $db->ITLEXICAL);
+$db->setindex("Familie", $db->ITLEXICAL);
 $db->setindex("Slekt", $db->ITLEXICAL);
 

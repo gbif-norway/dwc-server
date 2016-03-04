@@ -5,7 +5,7 @@ package GBIFNorway::NBIC;
 
 sub filter {
   my $dwc = {
-    'dateLastModified'          =>  $$_{DateLastModified},
+    'modified'          =>  $$_{DateLastModified},
     'catalogNumber'             =>  $$_{CatalogNumber},
     'institutionCode'           =>  $$_{InstitutionCode},
     'collectionCode'            =>  $$_{CollectionCode},
@@ -33,14 +33,18 @@ sub filter {
     'locality'                  =>  $$_{Locality},
     'decimalLatitude'           =>  $$_{Latitude},
     'decimalLongitude'          =>  $$_{Longitude},
-    'minimumElevation'          =>  $$_{MinimumElevation},
-    'maximumElevation'          =>  $$_{MaximumElevation},
-    'mimimumDepth'              =>  $$_{MimimumDepth},
-    'maximumDepth'              =>  $$_{MaximumDepth},
+    'minimumElevationInMeters'          =>  $$_{MinimumElevation},
+    'maximumElevationInMeters'          =>  $$_{MaximumElevation},
+    'mimimumDepthInMeters'              =>  $$_{MimimumDepth},
+    'maximumDepthInMeters'              =>  $$_{MaximumDepth},
     'preparations'              =>  $$_{PreparationType},
     'occurrenceRemarks'         =>  $$_{Notes},
     'samplingProtocol'          =>  $$_{CollectingMethod},
     'habitat'                   =>  $$_{Habitat},
+    'coordinateUncertaintyInMeters' => $$_{CoordinatePrecision},
+    'occurrenceRemarks' => "$$_{Okologi} $$_{Substrat}",
+    'e' => $$_{UTMost},
+    'n' => $$_{UTMnord},
     'empty' => ""
   };
   return $dwc;
@@ -48,6 +52,15 @@ sub filter {
 
 sub clean {
   my $dwc = shift;
+
+  # Hm?
+  $$dwc{verbatimCoordinateSystem} = "UTM";
+  $$dwc{verbatimCoordinates} = "32V " . $$dwc{e} . " " . $$dwc{n};
+
+  my $year = substr $$dwc{modified}, 0, 4;
+  my $month = substr $$dwc{modified}, 4, 2;
+  my $day = substr $$dwc{modified}, 6, 2;
+  $$dwc{modified} = "$year-$month-$day";
 
   if (!$$dwc{catalogNumber}) {
     $dwc->adderror("Missing catalognumber", "core");

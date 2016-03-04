@@ -4,7 +4,7 @@ our $db = TokyoCabinet::TDB->new;
 
 if(!$db->open("geonames/countries.db", $db->OREADER)) {
   my $ecode = $db->ecode();
-  die("geonames error: " . $db->errmsg($ecode) . "\n");
+  die("error loading database: " . $db->errmsg($ecode) . "\n");
 }
 our %continents = (
   'AF' => 'Africa',

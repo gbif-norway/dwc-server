@@ -20,21 +20,28 @@ our %names = ();
 our %filters = ();
 our %cleaners = ();
 
-do 'formats/musit.pl';
-do 'formats/nodwc.pl';
-do 'formats/dwc.pl';
-do 'formats/dwcm.pl';
-do 'formats/dugnad.pl';
-do 'formats/specify.pl';
-do 'formats/gbif.pl';
+for my $format (glob 'formats/*.pl') {
+  do $format;
+}
 
 package main;
 
 # fiks dette + lag man
-our $usage = "$0 [-ghu]\n";
+our $usage = <<EOS;
+$0  [-hmruv]
+    [-b basisofrecord]
+    [-c collectioncode]
+    [-d modified]
+    [-f format]
+    [-i institutioncode]
+    [-k kingdom]
+    [-x verbatim]
+EOS
 
-our ($opt_c, $opt_d, $opt_f, $opt_e, $opt_g, $opt_h, $opt_i, $opt_s, $opt_u);
-our ($opt_x, $opt_v, $opt_k, $opt_r, $opt_m, $opt_b);
+our $default_f = "dwc";
+
+our ($opt_b, $opt_c, $opt_d, $opt_e, $opt_f, $opt_g, $opt_h, $opt_i);
+our ($opt_k, $opt_m, $opt_r, $opt_s, $opt_u, $opt_v, $opt_x);
 getopts("k:x:s:i:c:d:e:f:ghruvmb:");
 
 if($opt_h) {
@@ -49,8 +56,8 @@ if($opt_x) {
 
 say STDOUT join("\t", @DwC::terms);
 
-my $filter = $GBIFNorway::filters{$opt_f || "musit"};
-my $n = $GBIFNorway::names{$opt_f || "musit"};
+my $filter = $GBIFNorway::filters{$opt_f || $default_f};
+my $n = $GBIFNorway::names{$opt_f || $default_f};
 
 my %options = (
   handle => \*STDIN,
@@ -63,8 +70,8 @@ my %options = (
 );
 
 # stygg hack
-if ($GBIFNorway::names{$opt_f || "musit"}) {
-  $options{names} = $GBIFNorway::names{$opt_f || "musit"},
+if ($GBIFNorway::names{$opt_f || $default_f}) {
+  $options{names} = $GBIFNorway::names{$opt_f || $default_f},
 }
 
 my $csv = Parse::CSV->new(%options);
@@ -88,7 +95,7 @@ while (my $raw = $csv->fetch) {
   }
 
   my $cat = $$dwc{catalogNumber};
-  my $cleaner = $GBIFNorway::cleaners{$opt_f || "musit"};
+  my $cleaner = $GBIFNorway::cleaners{$opt_f || $default_f};
 
   if($opt_x) {
     $dwc->printcsv($verbatim, \@DwC::terms);
@@ -144,7 +151,12 @@ while (my $raw = $csv->fetch) {
   }
 
   # flytt inn i DwC~?
-  my $triplet = $dwc->triplet;
+  my $triplet;
+  if($$dwc{occurrenceID}) {
+    $triplet = $$dwc{occurrenceID};
+  } else {
+    $triplet = $dwc->triplet;
+  }
   my $row = $$dwc{_row};
   for my $error (@{$$dwc{errors}}) {
     $errno++;

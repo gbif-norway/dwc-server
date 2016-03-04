@@ -66,8 +66,8 @@ sub addwarning {
 
 # fix
 sub validategeography {
+  my $dwc = shift;
   eval {
-    my $dwc = shift;
     my ($lat, $lon) = ($$dwc{decimalLatitude}, $$dwc{decimalLongitude});
     my $prec = $$dwc{coordinateUncertaintyInMeters};
     my $pol;
@@ -75,11 +75,6 @@ sub validategeography {
     if ($lat == 0 && $lon == 0) {
       return;
     }
-
-    #my $mun = GeoCheck::georef($lat, $lon, 'municipality');
-    #if($mun) {
-    #  $$dwc{municipality} = $mun;
-    #}
 
     if($$dwc{stateProvince} && $$dwc{county}) {
       my $county = $$dwc{county};
@@ -94,7 +89,7 @@ sub validategeography {
         $county = "Nome*";
       }
 
-      my $id = "county_" . $$dwc{stateProvince} . "_" . $county;
+      my $id = "county_$county";
       return if GeoCheck::inside($id, $lat, $lon);
       my ($p, $d) = GeoCheck::distance($id, $lat, $lon);
       return if($prec && $d < $prec);
@@ -126,6 +121,9 @@ sub validategeography {
       $dwc->addinfo($pol, "geo") if $pol;
     }
   };
+  if($@) {
+    $dwc->addwarning("geography trouble: $@", "geo");
+  }
 }
 
 sub validatebasisofrecord {
