@@ -40,7 +40,7 @@ our @terms = (
   "verbatimElevation", "minimumElevationInMeters", "maximumElevationInMeters",
   "verbatimDepth", "minimumDepthInMeters", "maximumDepthInMeters",
   "sex", "preparations", "individualCount",
-  "otherCatalogNumbers", "eventID",
+  "otherCatalogNumbers", "eventID", "locationID",
   "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
   "habitat", "footprintWKT",
   "verbatimLatitude", "verbatimLongitude",
@@ -76,18 +76,12 @@ sub validategeography {
       return;
     }
 
+    # midlertidig hack
+    if($$dwc{stateProvince} eq "Svalbard") { return; }
+    if($$dwc{stateProvince} eq "Spitsbergen") { return; }
+
     if($$dwc{stateProvince} && $$dwc{county}) {
       my $county = $$dwc{county};
-      # v stygg hack
-      if($county eq "FROGN" || $county eq "Frogn") {
-        $county = "Frogn*";
-      }
-      if($county eq "SANDEFJORD" || $county eq "Sandefjord") {
-        $county = "Sandefjord*";
-      }
-      if($county eq "NOME" || $county eq "Nome") {
-        $county = "Nome*";
-      }
 
       my $id = "county_$county";
       return if GeoCheck::inside($id, $lat, $lon);
@@ -97,7 +91,9 @@ sub validategeography {
       $d = int($d);
 
       my $sug = GeoCheck::georef($lat, $lon, 'county');
-      if($sug) {
+      if($sug eq $county) {
+        $dwc->addinfo("Matched secondary polygon...", "dev");
+      } elsif($sug) {
         $dwc->addwarning("$d meters outside $county ($sug?)", "geo");
       } else {
         $dwc->addwarning("$d meters outside $county", "geo");
@@ -113,7 +109,9 @@ sub validategeography {
       $d = int($d);
       my $sp = $$dwc{stateProvince};
       my $sug = GeoCheck::georef($lat, $lon, 'stateprovince');
-      if($sug) {
+      if($sug eq $sp) {
+        $dwc->addinfo("Matched secondary polygon...", "dev");
+      } elsif($sug) {
         $dwc->addwarning("$d meters outside $sp ($sug?)", "geo");
       } else {
         $dwc->addwarning("$d meters outside $sp", "geo");

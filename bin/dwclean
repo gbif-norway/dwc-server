@@ -141,6 +141,8 @@ while (my $raw = $csv->fetch) {
   $$dwc{modified} = $$dwc{dateLastModified} if $$dwc{dateLastModified};
   $$dwc{modified} = $$dwc{'dcterms:modified'} if $$dwc{'dcterms:modified'};
 
+  $$dwc{modified} = "2016-04-01";
+
   #if($$dwc{country} && !$$dwc{continent}) {
   #  $$dwc{continent} = Geonames::continent($$dwc{country});
   #}
@@ -156,6 +158,7 @@ while (my $raw = $csv->fetch) {
     $triplet = $$dwc{occurrenceID};
   } else {
     $triplet = $dwc->triplet;
+    $$dwc{occurrenceID} = "urn:catalog:" . $triplet;
   }
   my $row = $$dwc{_row};
   for my $error (@{$$dwc{errors}}) {

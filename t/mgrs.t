@@ -37,6 +37,8 @@ ok($d == 7071, "Usikkerhet (10000 meter)");
 ok($mgrs eq "32UPG1500015000", "PG -> 32U");
 
 ($mgrs, $d) = GBIFNorway::MGRS::parse("NM-PM 950-005,415-450");
+printf("%d\n", $d);
 ok($d == 3329, "Usikkerhet (flere ruter)");
+printf("$mgrs\n", $d);
 ok($mgrs eq "32VNM9780043300", "Midtpunkt (flere ruter)");
 

@@ -1,5 +1,6 @@
 use strict;
 use warnings;
+use utf8;
 
 package Artsnavn;
 
@@ -65,7 +66,17 @@ sub addtaxonomy {
     $$dwc{class} = $$name{Klasse} unless grep /^$rank$/, ('phylum');
     $$dwc{phylum} = $$name{Rekke};
     $$dwc{kingdom} = $$name{Rike};
-    $dwc->addinfo("Added higher taxonomic ranks from Artsnavnebasen", "name");
+
+    utf8::decode($$dwc{genus});
+    utf8::decode($$dwc{family});
+    utf8::decode($$dwc{order});
+    utf8::decode($$dwc{class});
+    utf8::decode($$dwc{phylum});
+    utf8::decode($$dwc{kingdom});
+
+    if(UNIVERSAL::isa($dwc, "DwC")) {
+      $dwc->addinfo("Added higher taxonomic ranks from Artsnavnebasen", "name");
+    }
   }
 }
 
