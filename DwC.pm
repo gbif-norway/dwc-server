@@ -1,6 +1,11 @@
 use utf8;
 use 5.14.0;
 
+# todo:
+# - bli kvitt "0" place holders
+# - recordedby = 0??
+# - fjern m i minimumelevation osv "1050 m"
+
 use DateTime;
 use POSIX;
 use Geo::Coordinates::UTM::XS;
