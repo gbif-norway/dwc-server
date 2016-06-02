@@ -11,7 +11,6 @@ use Parse::CSV;
 
 do 'Artsnavn.pm';
 
-#use Geonames;
 use DwC;
 
 package GBIFNorway;
@@ -84,51 +83,35 @@ my $nn = 0;
 while (my $raw = $csv->fetch) {
   my $dwc = DwC->new($raw, $csv->row);
 
-  if($opt_b) {
-    $$dwc{basisOfRecord} = $opt_b;
-    #$$dwc{occurrenceRemarks} = "$$dwc{institutionCode}:$$dwc{collectionCode}:$$dwc{catalogNumber}. $$dwc{occurrenceRemarks}";
-  }
+  # Set values provided explicitly
+  $$dwc{basisOfRecord} = $opt_b if($opt_b);
+  $$dwc{institutionCode} = $opt_i if($opt_i);
+  $$dwc{collectionCode} = $opt_c if($opt_c);
+  $$dwc{catalogNumber} = $nn++ if($opt_m);
+  $$dwc{modified} = $opt_d if($opt_d);
 
-  if($opt_m) {
-    $nn = $nn + 1;
-    $$dwc{catalogNumber} = $nn;
-  }
+  # Print verbatim record
+  $dwc->printcsv($verbatim, \@DwC::terms) if($opt_x);
 
-  my $cat = $$dwc{catalogNumber};
+  # Preliminary cleanup
   my $cleaner = $GBIFNorway::cleaners{$opt_f || $default_f};
-
-  if($opt_x) {
-    $dwc->printcsv($verbatim, \@DwC::terms);
-  }
-
   &$cleaner($dwc);
 
-  if($opt_i) {
-    $dwc->addinfo("Replaced institutionCode with $opt_i", "institutionCode");
-    $$dwc{institutionCode} = $opt_i if($opt_i);
-  }
-  if($opt_c) {
-    $dwc->addinfo("Replaced collectionCode with $opt_c", "collectionCode");
-    $$dwc{collectionCode} = $opt_c if($opt_c);
+  # Perform all plugin-based validations
+  for my $plugin ($dwc->plugins) {
+    $plugin->validate($dwc);
   }
 
+  # Check for duplicate ids
   if(!$opt_u) {
-    if($cat) {
-      if($uniques{$cat}) {
-        $dwc->adderror("Duplicate catalogNumber", "core");
-      }
-      $uniques{$cat} = 1;
+    my $catalogNumber = $$dwc{catalogNumber} || "";
+    if($uniques{$catalogNumber}) {
+      $dwc->log("error", "Duplicate catalogNumber", "core");
     }
+    $uniques{$catalogNumber} = 1;
   }
 
-  if($opt_d) {
-    $$dwc{modified} = $opt_d;
-  }
-
-  $dwc->validatebasisofrecord;
-  $dwc->validatedates;
-  $dwc->validateelevation;
-
+  # Needs a separate plugin~
   my $overwrite = 1;
   if($opt_r) {
     $overwrite = 0;
@@ -136,54 +119,46 @@ while (my $raw = $csv->fetch) {
   eval {
     Artsnavn::addtaxonomy($dwc, $opt_k, $overwrite);
   };
-  $dwc->addwarning($@, "name") if $@;
+  $dwc->log("warning", $@, "name") if $@;
 
-  $$dwc{modified} = $$dwc{dateLastModified} if $$dwc{dateLastModified};
-  $$dwc{modified} = $$dwc{'dcterms:modified'} if $$dwc{'dcterms:modified'};
-
-  $$dwc{modified} = "2016-04-01";
-
-  #if($$dwc{country} && !$$dwc{continent}) {
-  #  $$dwc{continent} = Geonames::continent($$dwc{country});
-  #}
-
-  $dwc->handlecoordinates;
-  if($$dwc{decimalLatitude} && $$dwc{decimalLongitude}) {
-    $dwc->validategeography;
-  }
-
-  # flytt inn i DwC~?
-  my $triplet;
+  # Need a relatively stable id~
+  my $id;
   if($$dwc{occurrenceID}) {
-    $triplet = $$dwc{occurrenceID};
+    $id = $$dwc{occurrenceID};
   } else {
-    $triplet = $dwc->triplet;
-    $$dwc{occurrenceID} = "urn:catalog:" . $triplet;
-  }
-  my $row = $$dwc{_row};
-  for my $error (@{$$dwc{errors}}) {
-    $errno++;
-    say STDERR "$errno\terror\t$triplet\t$row\t$$error[0]\t$$error[1]";
-  }
-  for my $warning (@{$$dwc{warnings}}) {
-    $errno++;
-    say STDERR "$errno\twarning\t$triplet\t$row\t$$warning[0]\t$$warning[1]";
+    $id = "urn:catalog:" . $dwc->triplet;
+    $$dwc{occurrenceID} = $id;
   }
 
+  # Print errors, warnings, and info messages
+  my $row = $$dwc{_row};
+  for my $error (@{$$dwc{error}}) {
+    $errno++;
+    say STDERR "$errno\terror\t$id\t$row\t$$error[0]\t$$error[1]";
+  }
+  for my $warning (@{$$dwc{warning}}) {
+    $errno++;
+    say STDERR "$errno\twarning\t$id\t$row\t$$warning[0]\t$$warning[1]";
+  }
   if($opt_v) {
     for my $info (@{$$dwc{info}}) {
       $errno++;
-      say STDERR "$errno\tinfo\t$triplet\t$row\t$$info[0]\t$$info[1]";
+      say STDERR "$errno\tinfo\t$id\t$row\t$$info[0]\t$$info[1]";
     }
   }
+
+  # Skip the record if there are fatal errors
   next if (@{$$dwc{errors}});
 
+  # Print it!
   $dwc->printcsv(\*STDOUT, \@DwC::terms);
 }
 
+# Die ASAP on CSV errors
 if($csv->errstr) {
   die($csv->errstr . "\n");
 }
 
+# Clean up...
 close($verbatim) if $verbatim;
 

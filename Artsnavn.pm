@@ -31,7 +31,7 @@ sub addtaxonomy {
   } elsif($$dwc{scientificName}) {
     ($raw, $_) = split(/\s/, $$dwc{scientificName}, 2);
   } else {
-    $dwc->adderror("Missing scientificName", "name");
+    $dwc->log("error", "Missing scientificName", "name");
     return;
   }
 
@@ -75,7 +75,8 @@ sub addtaxonomy {
     utf8::decode($$dwc{kingdom});
 
     if(UNIVERSAL::isa($dwc, "DwC")) {
-      $dwc->addinfo("Added higher taxonomic ranks from Artsnavnebasen", "name");
+      $dwc->log("info",
+        "Added higher taxonomic ranks from Artsnavnebasen", "name");
     }
   }
 }
