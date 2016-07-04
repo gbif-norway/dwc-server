@@ -9,8 +9,6 @@ use open qw/:std :utf8/;
 use Getopt::Std;
 use Parse::CSV;
 
-do 'Artsnavn.pm';
-
 use DwC;
 
 package GBIFNorway;
@@ -110,16 +108,6 @@ while (my $raw = $csv->fetch) {
     }
     $uniques{$catalogNumber} = 1;
   }
-
-  # Needs a separate plugin~
-  my $overwrite = 1;
-  if($opt_r) {
-    $overwrite = 0;
-  }
-  eval {
-    Artsnavn::addtaxonomy($dwc, $opt_k, $overwrite);
-  };
-  $dwc->log("warning", $@, "name") if $@;
 
   # Need a relatively stable id~
   my $id;
