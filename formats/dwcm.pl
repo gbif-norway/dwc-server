@@ -141,7 +141,7 @@ sub clean {
     };
     if($@) {
       my $warning = $@ =~ s/\s+$//r =~ s/ at.*//r;
-      $dwc->addwarning($warning, "parseMGRS", "geo");
+      $dwc->log("warning", $warning, "parseMGRS", "geo");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
@@ -152,7 +152,7 @@ sub clean {
       $utm = GBIFNorway::UTM::parse("", $$dwc{verbatimCoordinates});
     };
     if($@) {
-      $dwc->addwarning("Unable to parse UTM coordinates", "geo");
+      $dwc->log("warning", "Unable to parse UTM coordinates", "geo");
     }
     if($utm) {
       $$dwc{coordinates} = $utm;
@@ -170,7 +170,7 @@ sub clean {
     };
     if($@) {
       my $warning = $@ =~ s/\s+$//r =~ s/ at.*//r;
-      $dwc->addwarning($warning, "parseDecimalDegrees", "geo");
+      $dwc->log("warning", $warning, "parseDecimalDegrees", "geo");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
@@ -185,7 +185,7 @@ sub clean {
     };
     if($@) {
       my $warning = $@ =~ s/\s+$//r =~ s/ at.*//r;
-      $dwc->addwarning($warning, "parseDegrees", "geo");
+      $dwc->log("warning", $warning, "parseDegrees", "geo");
       $$dwc{decimalLatitude} = "";
       $$dwc{decimalLongitude} = "";
       $$dwc{verbatimCoordinateSystem} = "Unknown";
@@ -198,7 +198,7 @@ sub clean {
     }
     $$dwc{verbatimCoordinateSystem} = "RT90";
   } elsif($system =~ "Unknown") {
-    $dwc->addwarning("Unknown coordinate system", "geo");
+    $dwc->log("warning", "Unknown coordinate system", "geo");
     $$dwc{decimalLatitude} = "";
     $$dwc{decimalLongitude} = "";
     $$dwc{coordinateUncertaintyInMeters} = "";

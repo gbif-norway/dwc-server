@@ -36,8 +36,10 @@ our @terms = (
   "sex", "preparations", "individualCount",
   "otherCatalogNumbers", "eventID", "locationID",
   "occurrenceRemarks", "samplingProtocol", "identificationRemarks",
+  "georeferenceRemarks",
   "habitat", "footprintWKT",
   "verbatimLatitude", "verbatimLongitude",
+  "datasetName",
   "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
   "associatedMedia", "organismID", "individualID", "datasetKey", "license"
 );
@@ -56,6 +58,7 @@ sub log {
 sub printcsv {
   my ($me, $handle, $fields) = @_;
   my $row = join("\t", @{$me}{@$fields});
+  use warnings FATAL => 'all';
   $row =~ s/\"/'/g;
   say $handle $row;
 }

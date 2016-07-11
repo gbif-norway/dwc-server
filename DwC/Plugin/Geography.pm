@@ -30,7 +30,7 @@ sub validateMGRS {
 	my ($lat, $lon);
 	eval {
 		if($datum eq "European 1950" || $$dwc{verbatimSRS} eq "ED50") {
-			my ($zone, $h, $e, $n) = ::mgrs_to_utm($mgrs);
+			my ($zone, $h, $e, $n) = mgrs_to_utm($mgrs);
 			my $ed50 = Geo::Proj4->new("+proj=utm +zone=$zone$h +ellps=intl +units=m +towgs84=-87,-98,-121");
 			my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
 			my $point = [$e, $n];
@@ -43,7 +43,7 @@ sub validateMGRS {
 				"geo"
 			);
 		} else {
-			my ($zone, $h, $e, $n) = ::mgrs_to_utm($mgrs);
+			my ($zone, $h, $e, $n) = mgrs_to_utm($mgrs);
 			my $utm = Geo::Proj4->new("+proj=utm +zone=$zone$h +units=m");
 			my $wgs84 = Geo::Proj4->new(init => "epsg:4326");
 			my $point = [$e, $n];
@@ -56,7 +56,7 @@ sub validateMGRS {
 		}
 	};
 	if($@) {
-		$dwc->log("warning", "Failed to convert MGRS coordinates: $mgrs", "geo");
+		$dwc->log("warning", "Failed to convert MGRS coordinates: $mgrs $@", "geo");
 		($lat, $lon) = ("", "");
 	}
 }
@@ -207,7 +207,8 @@ sub validateGeography {
 		}
 	};
 	if($@) {
-		$dwc->log("warning", "geography trouble: $@", "geo");
+    #$dwc->log("warning",
+    #  "Place name(s) not found in geography database", "geo");
 	}
 
 }

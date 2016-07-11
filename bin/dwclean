@@ -33,13 +33,14 @@ $0  [-hmruv]
     [-i institutioncode]
     [-k kingdom]
     [-x verbatim]
+    [-e]
 EOS
 
 our $default_f = "dwc";
 
 our ($opt_b, $opt_c, $opt_d, $opt_e, $opt_f, $opt_g, $opt_h, $opt_i);
 our ($opt_k, $opt_m, $opt_r, $opt_s, $opt_u, $opt_v, $opt_x);
-getopts("k:x:s:i:c:d:e:f:ghruvmb:");
+getopts("k:x:s:i:c:d:f:ghreuvmb:");
 
 if($opt_h) {
   print($usage) and exit;
@@ -111,7 +112,7 @@ while (my $raw = $csv->fetch) {
 
   # Need a relatively stable id~
   my $id;
-  if($$dwc{occurrenceID}) {
+  if($$dwc{occurrenceID} && !$opt_e) {
     $id = $$dwc{occurrenceID};
   } else {
     $id = "urn:catalog:" . $dwc->triplet;
@@ -139,7 +140,13 @@ while (my $raw = $csv->fetch) {
   next if (@{$$dwc{errors}});
 
   # Print it!
-  $dwc->printcsv(\*STDOUT, \@DwC::terms);
+  eval {
+    $dwc->printcsv(\*STDOUT, \@DwC::terms);
+  };
+  if($@) {
+    $errno++;
+    say STDERR "$errno\twarning\t$id\t$row\tMalformed input\tcore";
+  }
 }
 
 # Die ASAP on CSV errors
