@@ -38,9 +38,9 @@ sub validate {
 	# Date validation
   my $year = strftime("%Y", gmtime);
 
-  if($$dwc{year} && $$dwc{year} eq "0") $$dwc{year} = "";
-  if($$dwc{month} && $$dwc{month} eq "00") $$dwc{month} = "";
-  if($$dwc{day} && $$dwc{day} eq "0000") $$dwc{day} = "";
+  if($$dwc{year} && $$dwc{year} eq "0") $$dwc{year} = undef;
+  if($$dwc{month} && $$dwc{month} eq "00") $$dwc{month} = undef;
+  if($$dwc{day} && $$dwc{day} eq "0000") $$dwc{day} = undef;
 
   if($$dwc{year} && ($$dwc{year} > $year || $$dwc{year} < 1750)) {
     $dwc->log("warning", "Year out of bounds $$dwc{year}", "date");
