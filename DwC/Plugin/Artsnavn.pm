@@ -24,6 +24,8 @@ sub description {
   return "Basic sanity checks";
 }
 
+sub completeness {
+}
 
 sub validate {
   my ($plugin, $dwc) = @_;

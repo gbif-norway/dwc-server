@@ -19,6 +19,10 @@ sub guess {
     "";
   } elsif(/^\d{2}\w{1}\s\w{2}\s\d+,\s\d+$/) {
     "MGRS";
+  } elsif(/^\d{2}\w{1}\s\w{2}\d+$/) {
+    "MGRS";
+  } elsif(/^\d{2}\w{1}\s\w{2}\s\d+\s+\d+$/) {
+    "MGRS";
   } elsif(/^\d{2}\w{1}\s\w{2}\s[\d\-,]+$/) {
     "MGRS";
   } elsif(/^\d{2}\w{1}\s\w{2}-\w{2}\s[\d\-,]+$/) {
@@ -29,7 +33,7 @@ sub guess {
     "MGRS";
   } elsif(/^\d{2}\w\w{2}[\d,]+\w{2}[\d,]+$/) {
     "MGRS";
-  } elsif(/^[\d\.°,]+\s*[NSEW]\s*[\d\.°,]+\s*[NSEW]$/) {
+  } elsif(/^\s*[\d\.°,]+\s*[NSEW]\s*[\d\.°,]+\s*[NSEW]\s*$/) {
     "decimal degrees";
   } elsif(/^Long&Lat:/) {
     "decimal degrees";
@@ -49,10 +53,18 @@ sub guess {
     "UTM";
   } elsif(/^Euref\. 89 (\d+)/) {
     "UTM (Euref.89)";
+  } elsif(/^\s*\w{2}\s\d+\,\d+\s*$/) {
+    "Broken MGRS";
   } elsif(/^\s*rikets nät/i) {
     "Rikets nät";
   } elsif(/^\s*RN/i) {
     "Rikets nät";
+  } elsif(/^\s*[\-\d\.]+\s[\-\d\.]+\s*$/) {
+    "decimal degrees";
+  } elsif(/^\s*\d{2}\w\s\w{2}\s\d+\,\d+\s*$/) {
+    "MGRS";
+  } elsif(/^\s*\w{2}\s*[\d\-\,]+$/) {
+    "Broken MGRS";
   } else {
     "Unknown";
   }
@@ -93,16 +105,17 @@ sub clean {
   }
 
   if($$dwc{NArtObsID}) {
-    $dwc->adderror("Already provided to Artskart and the GBIF network through Artsobservasjoner", "core");
-  }
-
-  if($$dwc{datasetName}) {
-    $$dwc{collectionCode} = $$dwc{datasetName};
+    $dwc->log("error", "Already provided to Artskart and the GBIF network through Artsobservasjoner", "core");
   }
 
   $$dwc{'dcterms:modified'} = parsedate($$dwc{'dcterms:modified'});
+  $$dwc{_mediaLicense} = $$dwc{CreativeCommonsLicense};
 
   my $system = guess($$dwc{verbatimCoordinates});
+  if($system eq "Broken MGRS") {
+    $dwc->log("warning", "MGRS coordinates are incomplete", "coordinates");
+    $system = "MGRS";
+  }
 
   if(!$system) {
     $$dwc{verbatimCoordinateSystem} = "";
@@ -114,6 +127,9 @@ sub clean {
       if($mgrs) {
         $$dwc{verbatimCoordinateSystem} = "MGRS";
         $$dwc{coordinates} = uc $mgrs;
+        if(!$$dwc{coordinateUncertaintyInMeters}) {
+          $$dwc{coordinateUncertaintyInMeters} = $d;
+        }
         #if($d > $$dwc{coordinateUncertaintyInMeters}) {
           #my $warning = "Coordinate uncertainty. $$dwc{coordinateUncertaintyInMeters} / $d";
           #$dwc->addwarning($warning, "geo");
@@ -204,7 +220,7 @@ sub clean {
     $$dwc{coordinateUncertaintyInMeters} = "";
     $$dwc{verbatimCoordinateSystem} = "unknown";
   } else {
-    $dwc->adderror("What?", "core");
+    $dwc->log("error", "What?", "core");
   }
 
   # Datum

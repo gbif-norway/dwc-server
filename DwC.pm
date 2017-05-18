@@ -41,7 +41,8 @@ our @terms = (
   "verbatimLatitude", "verbatimLongitude",
   "datasetName",
   "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
-  "associatedMedia", "organismID", "individualID", "datasetKey", "license"
+  "associatedMedia", "organismID", "individualID", "datasetKey", "license",
+  "_completeness", "_incomplete", "_mediaLicense"
 );
 
 sub triplet {

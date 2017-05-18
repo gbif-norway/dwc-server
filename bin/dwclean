@@ -46,6 +46,10 @@ if($opt_h) {
   print($usage) and exit;
 }
 
+if($opt_k) {
+  $ENV{ARTSNAVN_KINGDOM} = $opt_k;
+}
+
 our $verbatim;
 if($opt_x) {
   open $verbatim, ">", $opt_x;
@@ -117,6 +121,11 @@ while (my $raw = $csv->fetch) {
   } else {
     $id = "urn:catalog:" . $dwc->triplet;
     $$dwc{occurrenceID} = $id;
+  }
+
+  # And then finally completeness checks
+  for my $plugin ($dwc->plugins) {
+    $plugin->completeness($dwc);
   }
 
   # Print errors, warnings, and info messages

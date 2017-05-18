@@ -86,7 +86,13 @@ sub parse {
     $zones = $1;
     my $coords = $2;
     $coords =~ s/\s//;
-    ($es, $ns) = split(/,/, $coords);
+    if($coords =~ /,/) {
+      ($es, $ns) = split(/,/, $coords);
+    } else {
+      my $l = length($coords) / 2;
+      $es = substr($coords, 0, $l);
+      $ns = substr($coords, $l, $l);
+    }
     $zones =~ s/\s//g;
   } elsif($raw =~ /^(\d{2}\s\D{2})\s*([\d\s\-,]+)$/) {
     my $n = length($2) / 2;
@@ -98,15 +104,28 @@ sub parse {
     $zones = $1;
     $es = substr($2, 0, $n);
     $ns = substr($2, $n, $n);
+  } elsif($raw =~ /^(\d{2}\w)\s*(\w{2})(\d+)$/) { ## 28S CB167129
+    my $n = length($3) / 2;
+    $zones = "$1$2";
+    $es = substr($3, 0, $n);
+    $ns = substr($3, $n, $n);
+  } elsif($raw =~ /^\s*(\w\w) (\d+),(\d+)\s*$/) {
+    my $guess = zone($1);
+    $zones = "$guess$1";
+    $es = $2;
+    $ns = $3;
   } elsif($raw =~ /^(\w\w) (\d+)$/) {
     my $n = length($2) / 2;
     $zones = $1;
     $es = substr($2, 0, $n);
     $ns = substr($2, $n, $n);
+  } elsif($raw =~ /^\s*(\w{2})\s+([\d-]+),([\d-]+)\s*$/) {
+    $zones = "32V$1-32V$1";
+    $es = $2;
+    $ns = $3;
   } else {
     ($zones, $es, $ns) = split(/[\s\,]+/, $raw);
   }
-
   die "Broken MGRS string" if !defined($ns);
 
   my ($z, $z2) = $zones =~ /-/ ? split("-", $zones) : ($zones, $zones);

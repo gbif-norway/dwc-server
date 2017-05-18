@@ -56,7 +56,7 @@ sub validateMGRS {
 		}
 	};
 	if($@) {
-		$dwc->log("warning", "Failed to convert MGRS coordinates: $mgrs $@", "geo");
+		$dwc->log("warning", "Failed to convert MGRS coordinates: $mgrs", "geo");
 		($lat, $lon) = ("", "");
 	}
 }
@@ -171,6 +171,26 @@ sub validateGeography {
 			my $county = $$dwc{county};
 
 			my $id = "county_$county";
+
+      if($$dwc{stateProvince} eq "Akershus" && $county eq "Nes") {
+        $id = "county_nes*";
+      }
+      if($$dwc{stateProvince} eq "Vestfold" && $county eq "Sande") {
+        $id = "county_sande*";
+      }
+      if($$dwc{stateProvince} eq "Nordland" && $county eq "Bø") {
+        $id = "county_bø*";
+      }
+      if($$dwc{stateProvince} eq "Nordland" && $county eq "Herøy") {
+        $id = "county_herøy*";
+      }
+      if($$dwc{stateProvince} eq "Hedmark" && $county eq "Os") {
+        $id = "county_os*";
+      }
+      if($$dwc{stateProvince} eq "Østfold" && $county eq "Våler") {
+        $id = "county_våler*";
+      }
+
 			return if GeoCheck::inside($id, $lat, $lon);
 			my ($p, $d) = GeoCheck::distance($id, $lat, $lon);
 			return if($prec && $d < $prec);
@@ -181,9 +201,9 @@ sub validateGeography {
 			if($sug eq $county) {
 				$dwc->log("info", "Matched secondary polygon...", "dev");
 			} elsif($sug) {
-				$dwc->log("warning", "d meters outside $county ($sug?)", "geo");
+				$dwc->log("warning", "$d meters outside $county ($sug?)", "geo");
 			} else {
-				$dwc->log("warning", "d meters outside $county", "geo");
+				$dwc->log("warning", "$d meters outside $county", "geo");
 			}
 			$dwc->log("info", $pol, "geo") if $pol;
 		}
@@ -199,9 +219,9 @@ sub validateGeography {
 			if($sug eq $sp) {
 				$dwc->log("info", "Matched secondary polygon...", "dev");
 			} elsif($sug) {
-				$dwc->log("warning", "d meters outside $sp ($sug?)", "geo");
+				$dwc->log("warning", "$d meters outside $sp ($sug?)", "geo");
 			} else {
-				$dwc->log("warning", "d meters outside $sp", "geo");
+				$dwc->log("warning", "$d meters outside $sp", "geo");
 			}
 			$dwc->log("info", $pol, "geo") if $pol;
 		}
@@ -211,6 +231,9 @@ sub validateGeography {
     #  "Place name(s) not found in geography database", "geo");
 	}
 
+}
+
+sub completeness {
 }
 
 sub validate {

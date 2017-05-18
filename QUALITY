@@ -1,0 +1,24 @@
+If any of these is missing - INCOMPLETE
+  - basisOfRecord
+  - scientificName
+  - locality
+
+Quality, number of key terms:
+  - coordinates
+  - eventDate
+  - coordinateUncertaintyInMeters
+  - country
+  - *Elevation OR *Depth
+  - scientificNameAuthor
+  - dateIdentified
+  - recordedBy
+  - kingdom
+  - samplingMethod
+
+And for a gold star:
+  - a proper occurrenceID
+
+Above and beyond:
+  - localityID
+  - taxonID
+

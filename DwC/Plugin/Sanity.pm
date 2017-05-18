@@ -9,6 +9,9 @@ sub description {
   return "Basic sanity checks";
 }
 
+sub completeness {
+}
+
 sub validate {
   my ($plugin, $dwc) = @_;
 
@@ -27,11 +30,11 @@ sub validate {
   } elsif($$dwc{basisOfRecord} eq "LIVING_SPECIMEN") {
     $$dwc{basisOfRecord} = "LivingSpecimen";
   } elsif($$dwc{basisOfRecord} eq "UNKNOWN") {
-    $$dwc{basisOfRecord} = "Unknown";
+    $$dwc{basisOfRecord} = "Occurrence";
   }
 
   # ...validate basis of record
-  if($$dwc{basisOfRecord} !~ /^MaterialSample|Living specimen|PreservedSpecimen|Observation|Unknown|Fossil specimen$/i) {
+  if($$dwc{basisOfRecord} !~ /^MaterialSample|HumanObservation|MachineObservation|LivingSpecimen|PreservedSpecimen|Observation|Occurrence|FossilSpecimen$/i) {
     $dwc->log("warning", "Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
   }
 

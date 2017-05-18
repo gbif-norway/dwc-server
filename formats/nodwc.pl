@@ -56,7 +56,7 @@ sub filter {
     'samplingProtocol'          =>  $$_[48],
     'identificationRemarks'     =>  $$_[49],
     'georeferenceSources'       =>  $$_[58],
-    'associatedMedia'           =>  $$_[70],
+    'associatedMedia'           =>  $$_[77],
     'dcterms:license'           =>  $$_[71],
 
     'verbatimCoordinates'       =>  $$_[68],
@@ -71,6 +71,9 @@ sub filter {
     'geodeticDatum'             => "",
 
     # "norsk tillegg"
+
+    'MGRSfra' =>  $$_[56],
+    'MGRStil' =>  $$_[57],
     'empty' => ""
   };
   $$dwc{dateIdentified} = join '-', (grep /\S/, $$_[16], $$_[17], $$_[18]);
@@ -84,7 +87,7 @@ sub clean {
   $$dwc{verbatimCoordinateSystem} = "None";
 
   if (!$$dwc{catalogNumber}) {
-    $dwc->adderror("Missing catalognumber", "core");
+    $dwc->adderror("error", "Missing catalognumber", "core");
   }
 
   if($$dwc{verbatimLatitude} && $$dwc{verbatimLongitude}) {
@@ -93,11 +96,13 @@ sub clean {
   } elsif($$dwc{MGRSfra}) {
     my $datum = ($$dwc{MGRSfra} =~ s/\/E// ? "European 1950" : "WGS84");
     $$dwc{MGRSfra} =~ s/\/.?//;
+    eval {
     my ($mgrs, $d) = GBIFNorway::MGRS::parse($$dwc{MGRSfra});
     $$dwc{verbatimCoordinateSystem} = "MGRS";
     $$dwc{geodeticDatum} = $datum;
     $$dwc{coordinates} = $mgrs;
     $$dwc{coordinateUncertaintyInMeters} = $d;
+  };
   }
   return $dwc;
 }

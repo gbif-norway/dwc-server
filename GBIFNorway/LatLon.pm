@@ -9,16 +9,18 @@ sub parsedec {
   local $_ = shift;
   my ($lat, $lon);
   s/,/./g; s/^\s*//; s/\s*$//; s/^Long&Lat: //; s/[\.\s+]+/\./; s/°//i;
-  if (/^([\d\.]+)°?([EW])\s*([\d\.]+)°?([NS])$/) {
+  if (/^([\-\d\.]+)°?([EW])\s*([\-\d\.]+)°?([NS])$/) {
     ($lon, $lat) = ($1, $3);
     if($2 eq "W") { $lon = -$lon };
     if($4 eq "S") { $lat = -$lat };
-  } elsif (/^([\d\.]+)\s*°?\s*([NS])\s*([\d\.]+)\s*°?\s*([EW])?$/) {
+  } elsif (/^([\-\d\.]+)\s*°?\s*([NS])\s*([\-\d\.]+)\s*°?\s*([EW])?$/) {
     ($lat, $lon) = ($1, $3);
     if($2 eq "S") { $lat = -$lat };
     if($4 && $4 eq "W") { $lon = -$lon };
+  } elsif (/^\s*([\-\d\.]+)\s+([\-\d\.]+)\s*$/) {
+    ($lat, $lon) = ($1, $2);
   } else {
-    die("Unable to parse verbatim coordinates");
+    die("Unable to parse verbatim coordinates $_");
   }
   $lat =~ s/^\.//; $lon =~ s/^\.//;
   return ($lat, $lon);

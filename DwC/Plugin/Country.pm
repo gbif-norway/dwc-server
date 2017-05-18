@@ -521,6 +521,9 @@ sub description {
   return "Basic sanity checks";
 }
 
+sub completeness {
+}
+
 sub validate {
   my ($plugin, $dwc) = @_;
 
@@ -535,8 +538,8 @@ sub validate {
       if($code) {
         $$dwc{countryCode} = $code;
       } else {
-        $dwc->log("warning",
-          "Unable to determine countryCode ($$dwc{country})", "geo");
+        #$dwc->log("warning",
+        #  "Unable to determine countryCode ($$dwc{country})", "geo");
       }
     }
   }
