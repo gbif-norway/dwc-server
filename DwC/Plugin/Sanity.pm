@@ -23,6 +23,8 @@ sub validate {
   # Normalize, and...
   if($$dwc{basisOfRecord} eq "PRESERVED_SPECIMEN") {
     $$dwc{basisOfRecord} = "PreservedSpecimen";
+  } elsif($$dwc{basisOfRecord} eq "OBSERVATION") {
+    $$dwc{basisOfRecord} = "HumanObservation";
   } elsif($$dwc{basisOfRecord} eq "Preserved specimen") {
     $$dwc{basisOfRecord} = "PreservedSpecimen";
   } elsif($$dwc{basisOfRecord} eq "FOSSIL_SPECIMEN") {
@@ -34,7 +36,7 @@ sub validate {
   }
 
   # ...validate basis of record
-  if($$dwc{basisOfRecord} !~ /^MaterialSample|HumanObservation|MachineObservation|LivingSpecimen|PreservedSpecimen|Observation|Occurrence|FossilSpecimen$/i) {
+  if($$dwc{basisOfRecord} !~ /^MaterialSample|HumanObservation|MachineObservation|LivingSpecimen|PreservedSpecimen|Occurrence|FossilSpecimen$/) {
     $dwc->log("warning", "Unknown basisOfRecord $$dwc{basisOfRecord}", "core");
   }
 

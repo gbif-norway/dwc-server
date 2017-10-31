@@ -8,6 +8,7 @@ use open qw/:std :utf8/;
 
 use Getopt::Std;
 use Parse::CSV;
+use UUID::Tiny ':std';
 
 use DwC;
 
@@ -39,8 +40,8 @@ EOS
 our $default_f = "dwc";
 
 our ($opt_b, $opt_c, $opt_d, $opt_e, $opt_f, $opt_g, $opt_h, $opt_i);
-our ($opt_k, $opt_m, $opt_r, $opt_s, $opt_u, $opt_v, $opt_x);
-getopts("k:x:s:i:c:d:f:ghreuvmb:");
+our ($opt_k, $opt_m, $opt_r, $opt_s, $opt_u, $opt_v, $opt_x, $opt_o);
+getopts("k:x:s:i:c:d:f:ghreuvomb:");
 
 if($opt_h) {
   print($usage) and exit;
@@ -93,6 +94,10 @@ while (my $raw = $csv->fetch) {
   $$dwc{catalogNumber} = $nn++ if($opt_m);
   $$dwc{modified} = $opt_d if($opt_d);
 
+  if($opt_o) {
+    $$dwc{occurrenceID} = "urn:uuid:" . create_uuid_as_string(UUID_V4);
+  }
+
   # Print verbatim record
   $dwc->printcsv($verbatim, \@DwC::terms) if($opt_x);
 
@@ -100,21 +105,8 @@ while (my $raw = $csv->fetch) {
   my $cleaner = $GBIFNorway::cleaners{$opt_f || $default_f};
   &$cleaner($dwc);
 
-  # Perform all plugin-based validations
-  for my $plugin ($dwc->plugins) {
-    $plugin->validate($dwc);
-  }
-
-  # Check for duplicate ids
-  if(!$opt_u) {
-    my $catalogNumber = $$dwc{catalogNumber} || "";
-    if($uniques{$catalogNumber}) {
-      $dwc->log("error", "Duplicate catalogNumber", "core");
-    }
-    $uniques{$catalogNumber} = 1;
-  }
-
-  # Need a relatively stable id~
+  # Need a relatively stable id~ default to 'urn:catalog:' combined with the
+  #   triplet if there's no occurrenceID
   my $id;
   if($$dwc{occurrenceID} && !$opt_e) {
     $id = $$dwc{occurrenceID};
@@ -123,9 +115,22 @@ while (my $raw = $csv->fetch) {
     $$dwc{occurrenceID} = $id;
   }
 
+  # Perform all plugin-based validations
+  for my $plugin ($dwc->plugins) {
+    $plugin->validate($dwc);
+  }
+
   # And then finally completeness checks
   for my $plugin ($dwc->plugins) {
     $plugin->completeness($dwc);
+  }
+
+  # Check for duplicate ids
+  if(!$opt_u) {
+    if($uniques{$id}) {
+      $dwc->log("error", "Duplicate occurrenceID", "core");
+    }
+    $uniques{$id} = 1;
   }
 
   # Print errors, warnings, and info messages

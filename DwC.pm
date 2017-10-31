@@ -42,6 +42,7 @@ our @terms = (
   "datasetName",
   "verbatimCoordinateSystem", "verbatimCoordinates", "verbatimSRS",
   "associatedMedia", "organismID", "individualID", "datasetKey", "license",
+  "associatedSequences",
   "_completeness", "_incomplete", "_mediaLicense"
 );
 

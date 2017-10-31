@@ -227,7 +227,7 @@ sub validateGeography {
 		}
 	};
 	if($@) {
-    #$dwc->log("warning",
+    $dwc->log("warning", "Kunne ikke sjekke geografi: $@", "geo");
     #  "Place name(s) not found in geography database", "geo");
 	}
 
@@ -239,7 +239,6 @@ sub completeness {
 sub validate {
 	my ($plugin, $dwc) = @_;
 
-	# First, find WGS84 coordinates
 	if($$dwc{decimalLatitude} || $$dwc{decimalLongitude}) {
 		$plugin->validateLatitudeLongitude($dwc);
 	} elsif($$dwc{verbatimCoordinateSystem} eq "MGRS") {
