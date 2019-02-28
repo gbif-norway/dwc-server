@@ -227,7 +227,7 @@ sub validateGeography {
 		}
 	};
 	if($@) {
-    $dwc->log("warning", "Kunne ikke sjekke geografi: $@", "geo");
+    #$dwc->log("warning", "Kunne ikke sjekke geografi: $@", "geo");
     #  "Place name(s) not found in geography database", "geo");
 	}
 

@@ -15,6 +15,7 @@ package GBIFNorway::MusitDwC;
 
 sub guess {
   local $_ = shift;
+  s/^\s+|\s+$//g;
   if(/^$/) {
     "";
   } elsif(/^\d{2}\w{1}\s\w{2}\s\d+,\s\d+$/) {
@@ -33,6 +34,12 @@ sub guess {
     "MGRS";
   } elsif(/^\d{2}\w\w{2}[\d,]+\w{2}[\d,]+$/) {
     "MGRS";
+  } elsif(/^\d+\.\d+[NS] \d+\.\d+[EW]$/) {
+    "decimal degrees";
+  } elsif(/^\d+\s+\d+[NSEW]\s+\d+\s+\d+[NSEW]$/) {
+    "degrees minutes seconds";
+  } elsif(/^\d+\s*[\d\.]+[NS]\s*\d+\s*[\d\.]+[EW]$/) {
+    "degrees minutes seconds";
   } elsif(/^\s*[\d\.°,]+\s*[NSEW]\s*[\d\.°,]+\s*[NSEW]\s*$/) {
     "decimal degrees";
   } elsif(/^Long&Lat:/) {
@@ -46,6 +53,8 @@ sub guess {
   } elsif(/^\d+°\s*[\d\.]+'\s*[NSEW]\s+\d+°\s*[\d\.]+'\s*[NSEW]$/) {
     "degrees minutes seconds";
   } elsif(/(\d+)[A-Z]\s*[A-Z]?\s*(\d+),(\d+)/) {
+    "UTM";
+  } elsif(/(\d+)[A-Z]\s*[A-Z]?\s*(\d+) (\d+)/) {
     "UTM";
   } elsif(/^[NØ]\d+[\s,]+[NØ]\d+\.?$/) {
     "UTM";

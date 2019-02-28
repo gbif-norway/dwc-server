@@ -31,6 +31,8 @@ sub guess {
     "decimal degrees";
   } elsif(/^[\d,\s]+\s*[NSEW]\s*[\d,\s]+\s*[NSEW]$/) {
     "decimal degrees";
+  } elsif(/^\d+\s*[\d\.]+[NS]\s*\d+\s*[\d\.]+[EW]$/) {
+    "degrees minutes seconds";
   } elsif(/^(Lat\.)?\s*[NSEW\s\d,°-]+\s*[\d-,]+'/) {
     "degrees minutes seconds";
   } elsif(/^\d+°\s*[\d\.]+'\s*[NSEW]\s+\d+°\s*[\d\.]+'\s*[NSEW]$/) {

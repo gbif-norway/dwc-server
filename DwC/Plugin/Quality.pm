@@ -3,8 +3,6 @@ use 5.14.0;
 
 package DwC::Plugin::Quality;
 
-use POSIX;
-
 sub description {
   return "Data completeness classification";
 }

@@ -33,25 +33,33 @@ while (my $row = $csv->fetch) {
   my $key = $$row{occurrenceID};
   my $rec = $db->get($key);
 
-  if(!$rec) {
-    my $raw = get("http://www.boldsystems.org/index.php/API_Public/combined?ids=" . $$row{processID} . "&format=tsv");
+  my $raw = get("http://www.boldsystems.org/index.php/API_Public/combined?ids=" . $$row{processID} . "&format=tsv");
 
-    open my $fh, '<', \$raw;
-    my %options = (
-      sep_char => "\t",
-      handle => $fh,
-      names => 1
-    );
+  open my $fh, '<', \$raw;
+  my %options = (
+    sep_char => "\t",
+    handle => $fh,
+    names => 1
+  );
 
-    my $csv2 = Parse::CSV->new(%options);
-    while (my $boldres = $csv2->fetch) {
-      $$row{marker} = $$boldres{markercode};
-      $$row{sequence} = $$boldres{nucleotides};
-      print Dumper($boldres);
-    }
-    $$row{url} = "http://www.boldsystems.org/index.php/API_Public/sequence?ids=" . $$row{processID};
-    $db->put($key, $row);
+  my $csv2 = Parse::CSV->new(%options);
+  while (my $boldres = $csv2->fetch) {
+    $$row{processid} = $$boldres{processid};
+    $$row{marker} = $$boldres{markercode};
+    $$row{primers} = $$boldres{seq_primers};
+    $$row{sequence} = $$boldres{nucleotides};
+    $$row{centers} = $$boldres{sequencing_centers};
+    $$row{date} = $$boldres{run_dates};
+
+    $$row{image} = $$boldres{image_urls};
+    $$row{caption} = $$boldres{captions};
+    $$row{photographer} = $$boldres{photographers};
+    $$row{copyright_year} = $$boldres{copyright_years};
+    $$row{copyright_license} = $$boldres{copyright_licenses};
+    $$row{copyright_institution} = $$boldres{copyright_institutions};
   }
+  $$row{url} = "http://www.boldsystems.org/index.php/API_Public/sequence?ids=" . $$row{processID};
+  $db->put($key, $row);
 }
 
 if($csv->errstr) {
