@@ -1,0 +1,4 @@
+#!/bin/bash
+
+hax/kvern Animalia specify 609217ee-054d-441d-a850-356cbc2fb385 < tmp/animalia.csv
+

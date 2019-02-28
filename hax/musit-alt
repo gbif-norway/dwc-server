@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd /gbif/dwc/hax
+./musit >musit.log 2>musit-err.log
+./musitsql >musitsql.log 2>musitsql-err.log
+#pkill lighttpd
+#lighttpd -f /etc/lighttpd/lighttpd.conf
+

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+cd /Users/bie/dwc
+
+echo "spise spise..."
+./bin/dwclean -k$1 -v -f$2 $4 -xverbatim.txt 2>errors.txt >dwc.txt
+
+cp -R ~/tmp/proto ~/tmp/$3
+
+echo "rydde i gamle filer..."
+rm -f ~/tmp/$3/data/*.db
+rm -f ~/tmp/$3/data/*idx*
+
+mv dwc.txt verbatim.txt errors.txt ~/tmp/$3/import/
+
+cd ~/tmp/$3/import
+
+echo "dytte ting i database..."
+
+echo "$(wc -l dwc.txt) records and $(grep -v info errors.txt | wc -l) errors"
+
+lspimport dwc.txt
+lspimportv verbatim.txt
+lspimporte errors.txt
+
+echo "tegne kart..."
+perl kart.pl dwc.txt
+/usr/local/bin/lua kart-count.lua
+mv kart-count.db kart.db
+
+mv *.db ../data/
+cd ../data/
+
+echo "oppslagsverk..."
+/usr/local/bin/lua coordinateSystem.lua | sort -u > coordinatesystems.txt
+/usr/local/bin/lua countries.lua | sort -u > countries.txt
+/usr/local/bin/lua county.lua | sort -u > kommuner.txt
+/usr/local/bin/lua stateProvince.lua | sort -u > fylker.txt
+/usr/local/bin/lua search.lua
+./index
+
+mkdir -p ~/datasets/$3/data/
+
+rm -f ~/datasets/$3/data/*.db
+rm -f ~/datasets/$3/data/*.idx.*
+
+echo "ライブ..."
+cp -R *.db *.idx.* *.txt ~/datasets/$3/data/
+

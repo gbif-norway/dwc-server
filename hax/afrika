@@ -1,0 +1,41 @@
+#!/bin/bash
+
+cd /Users/bie/dwc
+
+echo "spise spise..."
+./bin/dwclean -v -i "O" -c "Afrika" -fdugnad -b"Preserved specimen" -xverbatim.txt < tmp/afrika.txt >dwc.txt 2>errors.txt
+
+echo "rydde i gamle filer..."
+rm -f ~/tmp/afrika/data/*.db
+rm -f ~/tmp/afrika/data/*idx*
+
+mv dwc.txt verbatim.txt errors.txt ~/tmp/afrika/import/
+cd ~/tmp/afrika/import
+
+echo "dytte ting i database..."
+lspimport dwc.txt
+lspimportv verbatim.txt
+lspimporte errors.txt
+
+echo "tegne kart..."
+perl kart.pl dwc.txt
+/usr/local/bin/lua kart-count.lua
+mv kart-count.db kart.db
+
+mv *.db ../data/
+cd ../data/
+
+echo "oppslagsverk..."
+/usr/local/bin/lua coordinateSystem.lua | sort -u > coordinatesystems.txt
+/usr/local/bin/lua countries.lua | sort -u > countries.txt
+/usr/local/bin/lua county.lua | sort -u > kommuner.txt
+/usr/local/bin/lua stateProvince.lua | sort -u > fylker.txt
+/usr/local/bin/lua search.lua
+./index
+
+rm -f ~/datasets/afrika/data/*.db
+rm -f ~/datasets/afrika/data/*.idx.*
+
+echo "ライブ..."
+cp -R *.db *.idx.* *.txt ~/datasets/afrika/data/
+

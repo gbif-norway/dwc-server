@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#curl -s $1.gz | gunzip |
+./kvern Animalia dwc 511cacd8-e6e2-4862-8070-61fa9f28229a -r < ~/dwc/tmp/fugl.csv
+

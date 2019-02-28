@@ -1,0 +1,4 @@
+#!/bin/bash
+
+hax/kvern All dwc faun < tmp/faun.csv
+

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "> test (moss_o)"
+# curl -s -O http://www.unimus.no/nedlasting/datasett/moss_o.gz
+# gunzip -f moss_o.gz
+head -100 moss_o | ../kvern Plantae musitdwc test
+

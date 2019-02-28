@@ -1,0 +1,23 @@
+#!/bin/bash
+
+PREFIX="/gbif/datasets/"
+
+cd /gbif/dwc
+
+./bin/dwclean -e -k$1 -v -f$2 <hax/$4 2>result/$4_errors >result/$4
+
+mkdir -p $PREFIX/$3
+
+cp result/$4 $PREFIX/$3/dwc.txt
+cp result/$4_errors $PREFIX/$3/errors.txt
+
+#pushd $PREFIX/$3
+#echo "$(wc -l dwc.txt) records and $(grep -v info errors.txt | wc -l) errors"
+
+#../import
+#../lspstats
+
+#rm -f lock
+
+echo "ライブ..."
+

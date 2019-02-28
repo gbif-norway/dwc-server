@@ -1,0 +1,112 @@
+#!/bin/bash
+
+echo "> entomology_zmbn"
+curl -s -O http://www.unimus.no/nedlasting/datasett/entomology_zmbn.gz
+gunzip -f entomology_zmbn.gz
+./kvern Animalia musitdwc 6ce9819a-d82b-41e1-9059-0dd201f15993 entomology_zmbn
+
+echo "> algae_o"
+curl -s -O http://www.unimus.no/nedlasting/datasett/algae_o.gz
+gunzip -f algae_o.gz
+./kvern Plantae musitdwc 7aa3a91c-eafe-44f5-adfb-d48fca1a3db5 algae_o
+
+echo "> algae_trh"
+curl -s -O http://www.unimus.no/nedlasting/datasett/algae_trh.gz
+gunzip -f algae_trh.gz
+./kvern Plantae musitdwc fb716825-2962-4375-8532-3ac7429aa86d algae_trh
+
+echo "> vascular_o"
+curl -s -O http://www.unimus.no/nedlasting/datasett/vascular_o.gz
+gunzip -f vascular_o.gz
+./kvern Plantae musitdwc e45c7d91-81c6-4455-86e3-2965a5739b1f vascular_o
+
+echo "> moss_trh"
+curl -s -O http://www.unimus.no/nedlasting/datasett/moss_trh.gz
+gunzip -f moss_trh.gz
+./kvern Plantae musitdwc 6728c42d-c4b6-4fda-a211-5ad1bb59cda4 moss_trh
+
+echo "> entomology_nhmo"
+curl -s -O http://www.unimus.no/nedlasting/datasett/entomology_nhmo.gz
+gunzip -f entomology_nhmo.gz
+./kvern Animalia musitdwc 26f5b360-8770-4d54-9c2d-397798a5e513 entomology_nhmo
+
+echo "> entomology_nhmo_x"
+curl -s -O http://www.unimus.no/nedlasting/datasett/entomology_nhmo_x.gz
+gunzip -f entomology_nhmo_x.gz
+./kvern Animalia musitdwc nhm-insekter2 entomology_nhmo_x
+
+echo "> moss_o"
+curl -s -O http://www.unimus.no/nedlasting/datasett/moss_o.gz
+gunzip -f moss_o.gz
+./kvern Plantae musitdwc 68a0650f-96ae-499c-8b2a-a4f92c01e4b3 moss_o
+
+echo "> fungus_o"
+curl -s -O http://www.unimus.no/nedlasting/datasett/fungus_o.gz
+gunzip -f fungus_o.gz 
+./kvern Fungi musitdwc e4deab67-0998-4140-b573-0ba1f624eb3e fungus_o
+
+echo "> vascular_bg"
+curl -s -O http://www.unimus.no/nedlasting/datasett/vascular_bg.gz
+gunzip -f vascular_bg.gz
+./kvern Plantae musitdwc 4db619a6-9429-4bef-90c9-06cc90c39552 vascular_bg
+
+echo "> fungus_trh"
+curl -s -O http://www.unimus.no/nedlasting/datasett/fungus_trh.gz
+gunzip -f fungus_trh.gz
+./kvern Fungi musitdwc 7eb54e10-fd36-4139-8764-1fd8abc2bd67 fungus_trh
+
+echo "> fungus_bg"
+curl -s -O http://www.unimus.no/nedlasting/datasett/fungus_bg.gz
+gunzip -f fungus_bg.gz
+./kvern Fungi musitdwc 41690f55-ccbe-48ba-8238-01173f657072 fungus_bg
+
+echo "> fungus_trom"
+curl -s -O http://www.unimus.no/nedlasting/datasett/fungus_trom.gz
+gunzip -f fungus_trom.gz
+./kvern Fungi musitdwc 374e0d4c-cf9f-4e1a-97a4-14123ee1bb7e fungus_trom
+
+echo "> lichens_trh"
+curl -s -O http://www.unimus.no/nedlasting/datasett/lichens_trh.gz
+gunzip -f lichens_trh.gz
+./kvern Fungi musitdwc 78c1a71e-abb2-49cf-abc8-efafb981b0e4 lichens_trh
+
+echo "> lichens_trom"
+curl -s -O http://www.unimus.no/nedlasting/datasett/lichens_trom.gz
+gunzip -f lichens_trom.gz
+./kvern Fungi musitdwc e87a12af-fc4c-4315-bff7-c7b827379aca lichens_trom
+
+echo "> moss_trom"
+curl -s -O http://www.unimus.no/nedlasting/datasett/moss_trom.gz
+gunzip -f moss_trom.gz
+./kvern Plantae musitdwc 0f061eff-6854-4bb3-abe2-acb184ea3ab7 moss_trom
+
+echo "> vascular_kmn"
+curl -s -O http://www.unimus.no/nedlasting/datasett/vascular_kmn.gz
+gunzip -f vascular_kmn.gz
+./kvern Plantae musitdwc 30bc94f2-50aa-4688-8e87-a8e11d3d69ff vascular_kmn
+
+echo "> vascular_svg"
+curl -s -O http://www.unimus.no/nedlasting/datasett/vascular_svg.gz
+gunzip -f vascular_svg.gz
+./kvern Plantae musitdwc b4926f5d-6426-4774-83fa-099e927862a1 vascular_svg
+
+echo "> vascular_trh"
+curl -s -O http://www.unimus.no/nedlasting/datasett/vascular_trh.gz
+gunzip -f vascular_trh.gz
+./kvern Plantae musitdwc d29d79fd-2dc4-4ef5-89b8-cdf66994de0d vascular_trh
+
+echo "> vascular_trom"
+curl -s -O http://www.unimus.no/nedlasting/datasett/vascular_trom.gz
+gunzip -f vascular_trom.gz
+./kvern Plantae musitdwc d0aa984e-c6d3-45ee-8fc0-df1df8f4126b vascular_trom
+
+echo "> algae_kmn"
+curl -s -O http://www.unimus.no/nedlasting/datasett/algae_kmn.gz
+gunzip -f algae_kmn.gz
+./kvern Plantae musitdwc f60aa56f-cbb7-4f55-8a6d-67288d5ba9b1/ algae_kmn
+
+echo "> lichens_o"
+curl -s -O http://www.unimus.no/nedlasting/datasett/lichens_o.gz
+gunzip -f lichens_o.gz
+./kvern Fungi musitdwc o_lichens_test lichens_o
+

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+PREFIX="/site/gbif/lsp"
+
+cd /site/gbif/dwc
+
+echo "spise lav..."
+cat /site/gbif/tmp/lav/DC_UTF_1.TXT /site/gbif/tmp/lav/DC_UTF_2.TXT | ./bin/dwclean -e -v -fnodwc -iO -cL 2>$PREFIX/7948250c-6958-4a29-a670-ed1015b26252/errors.txt >$PREFIX/7948250c-6958-4a29-a670-ed1015b26252/dwc.txt
+echo "ooook"
+
+pushd $PREFIX/7948250c-6958-4a29-a670-ed1015b26252
+echo "$(wc -l dwc.txt) records and $(grep -v info errors.txt | wc -l) errors"
+
+../import
+../lspstats
+
+rm -f lock
+
+echo "ライブ..."
+

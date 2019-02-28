@@ -1,0 +1,26 @@
+#!/bin/bash
+
+/opt/bin/csvimport.py O_algae < /gbif/datasets/7aa3a91c-eafe-44f5-adfb-d48fca1a3db5/dwc.txt
+/opt/bin/csvimport.py TRH_bryophytes < /gbif/datasets/6728c42d-c4b6-4fda-a211-5ad1bb59cda4/dwc.txt
+/opt/bin/csvimport.py O_vascular < /gbif/datasets/e45c7d91-81c6-4455-86e3-2965a5739b1f/dwc.txt
+/opt/bin/csvimport.py NHMO_entomology < /gbif/datasets/26f5b360-8770-4d54-9c2d-397798a5e513/dwc.txt
+/opt/bin/csvimport.py O_fungi < /gbif/datasets/e4deab67-0998-4140-b573-0ba1f624eb3e/dwc.txt
+/opt/bin/csvimport.py TROM_vascular < /gbif/datasets/d0aa984e-c6d3-45ee-8fc0-df1df8f4126b/dwc.txt
+/opt/bin/csvimport.py TRH_algae < /gbif/datasets/fb716825-2962-4375-8532-3ac7429aa86d/dwc.txt
+/opt/bin/csvimport.py NHMO_entomology < /gbif/datasets/26f5b360-8770-4d54-9c2d-397798a5e513/dwc.txt
+/opt/bin/csvimport.py BG_fungi < /gbif/datasets/41690f55-ccbe-48ba-8238-01173f657072/dwc.txt
+/opt/bin/csvimport.py BG_zoology < /gbif/datasets/6ce9819a-d82b-41e1-9059-0dd201f15993/dwc.txt
+/opt/bin/csvimport.py TRH_fungi < /gbif/datasets/7eb54e10-fd36-4139-8764-1fd8abc2bd67/dwc.txt
+/opt/bin/csvimport.py TROM_F < /gbif/datasets/374e0d4c-cf9f-4e1a-97a4-14123ee1bb7e/dwc.txt
+/opt/bin/csvimport.py TRH_lichens < /gbif/datasets/78c1a71e-abb2-49cf-abc8-efafb981b0e4/dwc.txt
+/opt/bin/csvimport.py TROM_lichens < /gbif/datasets/e87a12af-fc4c-4315-bff7-c7b827379aca/dwc.txt
+/opt/bin/csvimport.py TROM_bryophytes < /gbif/datasets/0f061eff-6854-4bb3-abe2-acb184ea3ab7/dwc.txt
+/opt/bin/csvimport.py BG_vascular < /gbif/datasets/4db619a6-9429-4bef-90c9-06cc90c39552/dwc.txt
+/opt/bin/csvimport.py KMN_vascular < /gbif/datasets/30bc94f2-50aa-4688-8e87-a8e11d3d69ff/dwc.txt
+/opt/bin/csvimport.py SVG_vascular < /gbif/datasets/b4926f5d-6426-4774-83fa-099e927862a1/dwc.txt
+/opt/bin/csvimport.py TRH_vascular < /gbif/datasets/d29d79fd-2dc4-4ef5-89b8-cdf66994de0d/dwc.txt
+/opt/bin/csvimport.py O_bryophytes < /gbif/datasets/68a0650f-96ae-499c-8b2a-a4f92c01e4b3/dwc.txt
+/opt/bin/csvimport.py KMN_alge < /gbif/datasets/f60aa56f-cbb7-4f55-8a6d-67288d5ba9b1/dwc.txt
+
+/opt/bin/csvimport.py NHMO_entomology_x < /gbif/datasets/nhm-insekter2/dwc.txt
+# /opt/bin/csvimport.py LEPARB_entomology < /site/gbif/datasets/nhm-insekter2/dwc.txt

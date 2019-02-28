@@ -1,0 +1,11 @@
+- Flere muligheter for output (CSV/tekst, database og resolver)
+
+- Må få opp ordentlig system for resolver med:
+  - Selve posten
+  - Eventuelle kommentarer / annoteringer
+  - "Issues"
+  - API for å:
+    - Oppdatere/skape en post
+    - Skape kommentarer / annoteringer
+    - Oppdatere issues
+
