@@ -120,6 +120,11 @@ sub clean {
   $$dwc{'dcterms:modified'} = parsedate($$dwc{'dcterms:modified'});
   $$dwc{_mediaLicense} = $$dwc{CreativeCommonsLicense};
 
+  # Added by Rukaya to try and fix "dropped" geographic points
+  if($$dwc{'decimalLatitude'} ne "" && $$dwc{'decimalLongitude'} ne "") { 
+    return $dwc;
+  }
+
   my $system = guess($$dwc{verbatimCoordinates});
   if($system eq "Broken MGRS") {
     $dwc->log("warning", "MGRS coordinates are incomplete", "coordinates");
