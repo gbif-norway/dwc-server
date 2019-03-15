@@ -108,5 +108,6 @@ gunzip -f algae_kmn.gz
 echo "> lichens_o"
 curl -s -O http://www.unimus.no/nedlasting/datasett/lichens_o.gz
 gunzip -f lichens_o.gz
-./kvern Fungi musitdwc o_lichens_test lichens_o
+./kvern Fungi musitdwc 7948250c-6958-4a29-a670-ed1015b26252 lichens_o
+# ./kvern Fungi musitdwc o_lichens_test lichens_o
 

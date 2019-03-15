@@ -21,6 +21,7 @@
 /opt/bin/csvimport.py TRH_vascular < /gbif/datasets/d29d79fd-2dc4-4ef5-89b8-cdf66994de0d/dwc.txt
 /opt/bin/csvimport.py O_bryophytes < /gbif/datasets/68a0650f-96ae-499c-8b2a-a4f92c01e4b3/dwc.txt
 /opt/bin/csvimport.py KMN_alge < /gbif/datasets/f60aa56f-cbb7-4f55-8a6d-67288d5ba9b1/dwc.txt
+/opt/bin/csvimport.py O_lichens < /gbif/datasets/7948250c-6958-4a29-a670-ed1015b26252/dwc.txt
 
 /opt/bin/csvimport.py NHMO_entomology_x < /gbif/datasets/nhm-insekter2/dwc.txt
 # /opt/bin/csvimport.py LEPARB_entomology < /site/gbif/datasets/nhm-insekter2/dwc.txt
