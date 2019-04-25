@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "> vascular_trh"
+rm -f vascular_trh.txt
+curl -s -O http://www.unimus.no/nedlasting/datasett/vascular_trh.zip
+unzip vascular_trh.zip
+cp vascular_trh_media.txt /gbif/datasets/d29d79fd-2dc4-4ef5-89b8-cdf66994de0d/multimedia.txt
+rm -f vascular_trh_media.txt
+rm -f vascular_trh.zip
+rm -f vascular_trh.txt
+/opt/bin/csvimport-multimedia.py TRH_vascular_multimedia  '/gbif/datasets/d29d79fd-2dc4-4ef5-89b8-cdf66994de0d/multimedia.txt’
