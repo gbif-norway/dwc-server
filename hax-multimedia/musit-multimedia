@@ -1,0 +1,31 @@
+#!/bin/bash
+function load_multimedia() {
+  echo "> $1"
+  curl -s -O "http://www.unimus.no/nedlasting/datasett/$1.zip"
+  unzip "$1.zip"
+  cp "$1_media.txt" "/gbif/datasets/$2/multimedia.txt"
+  rm -f "$1_media.txt" "$1.txt" "$1.zip"
+  /opt/bin/csvimport-multimedia.py "$1_multimedia"  "/gbif/datasets/$2/multimedia.txt"
+}
+
+load_multimedia 'alge_kmn' 'f60aa56f-cbb7-4f55-8a6d-67288d5ba9b1'
+load_multimedia 'alge_o' '7aa3a91c-eafe-44f5-adfb-d48fca1a3db5'
+load_multimedia 'alge_trh' 'fb716825-2962-4375-8532-3ac7429aa86d'
+load_multimedia 'entomology_nhmo' '26f5b360-8770-4d54-9c2d-397798a5e513'
+load_multimedia 'entomology_zmb' '6ce9819a-d82b-41e1-9059-0dd201f15993'
+load_multimedia 'fungus_bg' '41690f55-ccbe-48ba-8238-01173f657072'
+load_multimedia 'fungus_o' 'e4deab67-0998-4140-b573-0ba1f624eb3e'
+load_multimedia 'fungus_trh' '7eb54e10-fd36-4139-8764-1fd8abc2bd67'
+load_multimedia 'fungus_trom' '374e0d4c-cf9f-4e1a-97a4-14123ee1bb7e'
+load_multimedia 'lichens_o' '7948250c-6958-4a29-a670-ed1015b26252'
+load_multimedia 'lichens_trh' '78c1a71e-abb2-49cf-abc8-efafb981b0e4'
+load_multimedia 'lichens_trom' 'e87a12af-fc4c-4315-bff7-c7b827379aca'
+load_multimedia 'moss_o' '68a0650f-96ae-499c-8b2a-a4f92c01e4b3'
+load_multimedia 'moss_trh' '6728c42d-c4b6-4fda-a211-5ad1bb59cda4'
+load_multimedia 'moss_trom' '0f061eff-6854-4bb3-abe2-acb184ea3ab7'
+load_multimedia 'vascular_bg' '4db619a6-9429-4bef-90c9-06cc90c39552'
+load_multimedia 'vascular_kmn' '30bc94f2-50aa-4688-8e87-a8e11d3d69ff'
+load_multimedia 'vascular_o' 'e45c7d91-81c6-4455-86e3-2965a5739b1f'
+load_multimedia 'vascular_svg' 'b4926f5d-6426-4774-83fa-099e927862a1'
+load_multimedia 'vascular_trh' 'd29d79fd-2dc4-4ef5-89b8-cdf66994de0d'
+load_multimedia 'vascular_trom' 'd0aa984e-c6d3-45ee-8fc0-df1df8f4126b'
