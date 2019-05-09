@@ -45,15 +45,11 @@ if hasmain:
   potential = connection.execute("SELECT count(*) FROM work").fetchone()[0]
   import pdb; pdb.set_trace()
   if existing - potential >= 10:
-    msg = emails.Message(subject="[gbif.no] reduksjon i antall poster (%s)" % dbname, text="Færre poster i %s enn ved forrige publisering!\nFra %s til %s.\nFortsetter som normalt." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
-    msg.send(to="christian.svindseth@nhm.uio.no")
-    msg.send(to="gbif-drift@nhm.uio.no")
-    msg.send(to="b.p.lofall@nhm.uio.no")
+    msg = emails.Message(subject="[gbif.no] reduction in number of multimedia records (%s)" % dbname, text="Fewer multimedia recors in  %s from %s to %s." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
+    msg.send(to="helpdesk@gbif.no")
   if (existing / 2) > potential:
-    msg = emails.Message(subject="[gbif.no] voldsom reduksjon i antall poster (%s)" % dbname, text="Færre poster i %s enn ved forrige publisering!\nFra %s til %s.\nAvbryter dataimport." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
-    msg.send(to="christian.svindseth@nhm.uio.no")
-    msg.send(to="gbif-drift@nhm.uio.no")
-    msg.send(to="b.p.lofall@nhm.uio.no")
+    msg = emails.Message(subject="[gbif.no] Extreme reduction in number of multimedia records (%s)" % dbname, text="Fewer multimedia recors in  %s from %s to %s. Import stopped." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
+    msg.send(to="helpdesk@gbif.no")
     sys.exit()
 
 transaction = connection.begin()
