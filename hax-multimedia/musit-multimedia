@@ -1,11 +1,11 @@
 #!/bin/bash
 function load_multimedia() {
   echo "> $1"
-  curl -s -O "http://www.unimus.no/nedlasting/datasett/$1.zip"
+  curl -s -O "http://www.unimus.no/nedlasting/datasett/DwC-A/$1.zip"
   unzip "$1.zip"
   cp "$1_media.txt" "/gbif/datasets/$2/multimedia.txt"
   rm -f "$1_media.txt" "$1.txt" "$1.zip"
-  /opt/bin/csvimport-multimedia.py "$1_multimedia"  "/gbif/datasets/$2/multimedia.txt"
+  ./csvimport-multimedia.py "$1_multimedia"  "/gbif/datasets/$2/multimedia.txt"
 }
 
 load_multimedia 'alge_kmn' 'f60aa56f-cbb7-4f55-8a6d-67288d5ba9b1'
