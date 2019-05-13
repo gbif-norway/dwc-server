@@ -57,12 +57,13 @@ with open(sys.argv[2], 'r') as core_file:
   if hasmain:
     existing = connection.execute("SELECT count(*) FROM main").fetchone()[0]
     potential = connection.execute("SELECT count(*) FROM work").fetchone()[0]
-    print('%s existing %s, potential: %s' % (dbname, existing, potential))
+    msg = emails.Message(subject='TEST [gbif.no] %s existing %s, potential: %s' % (dbname, existing, potential), text="Test run", mail_from="noreply@data.gbif.no")
+    msg.send(to="helpdesk@gbif.no")
     if existing - potential >= 10:
-      msg = emails.Message(subject="[gbif.no] reduction in number of multimedia records (%s)" % dbname, text="Fewer multimedia recors in  %s from %s to %s." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
+      msg = emails.Message(subject="[gbif.no] reduction in number of multimedia records (%s)" % (dbname), text="Fewer multimedia records in %s from %s to %s." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
       msg.send(to="helpdesk@gbif.no")
     if (existing / 2) > potential:
-      msg = emails.Message(subject="[gbif.no] Extreme reduction in number of multimedia records (%s)" % dbname, text="Fewer multimedia recors in  %s from %s to %s. Import stopped." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
+      msg = emails.Message(subject="[gbif.no] Extreme reduction in number of multimedia records (%s)" % dbname, text="Fewer multimedia records in %s from %s to %s. Import stopped." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
       msg.send(to="helpdesk@gbif.no")
       sys.exit()
 

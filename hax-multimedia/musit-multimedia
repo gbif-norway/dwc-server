@@ -5,7 +5,7 @@ function load_multimedia() {
   unzip "$1.zip"
   cp "$1_media.txt" "/gbif/datasets/$2/multimedia.txt"
   rm -f "$1_media.txt" "$1.txt" "$1.zip"
-  ./csvimport-multimedia.py "$1_multimedia"  "/gbif/datasets/$2/multimedia.txt"
+  /gbif/dwc/hax-multimedia/csvimport-multimedia.py "$1_multimedia"  "/gbif/datasets/$2/multimedia.txt"
 }
 
 # A lot of these don't have multimedia, therefore there is no link set up in the IPT
@@ -30,3 +30,5 @@ load_multimedia 'vascular_o' 'e45c7d91-81c6-4455-86e3-2965a5739b1f' # Has multim
 load_multimedia 'vascular_svg' 'b4926f5d-6426-4774-83fa-099e927862a1'
 load_multimedia 'vascular_trh' 'd29d79fd-2dc4-4ef5-89b8-cdf66994de0d' # Has multimedia
 load_multimedia 'vascular_trom' 'd0aa984e-c6d3-45ee-8fc0-df1df8f4126b' # Has multimedia
+
+echo "Finished" > log.txt
