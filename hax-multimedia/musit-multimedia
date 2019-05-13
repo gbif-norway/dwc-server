@@ -31,4 +31,3 @@ load_multimedia 'vascular_svg' 'b4926f5d-6426-4774-83fa-099e927862a1'
 load_multimedia 'vascular_trh' 'd29d79fd-2dc4-4ef5-89b8-cdf66994de0d' # Has multimedia
 load_multimedia 'vascular_trom' 'd0aa984e-c6d3-45ee-8fc0-df1df8f4126b' # Has multimedia
 
-echo "Finished" > log.txt

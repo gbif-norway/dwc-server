@@ -34,7 +34,9 @@ with open(sys.argv[2], 'r') as core_file:
   column_names = reader.fieldnames
   if 'OCCURRENCEID' not in column_names:
     if 'INSTITUTIONCODE' not in column_names and 'COLLECTIONCODE' not in column_names and 'CATALOGNUMBER' not in column_names:
-      import pdb; pdb.set_trace()
+      msg = emails.Message(subject="[gbif.no] no occurrenceid for %s" % (dbname), text="Institution code, collection code and/or catalog number not in columns of spreadsheet", mail_from="noreply@data.gbif.no")
+      msg.send(to="helpdesk@gbif.no")
+      sys.exit()
     occurrence_id = False
     column_names.append('occurrenceid')
   columns = [sql.Column(column_name, sql.Text()) for column_name in column_names]
@@ -57,8 +59,6 @@ with open(sys.argv[2], 'r') as core_file:
   if hasmain:
     existing = connection.execute("SELECT count(*) FROM main").fetchone()[0]
     potential = connection.execute("SELECT count(*) FROM work").fetchone()[0]
-    msg = emails.Message(subject='TEST [gbif.no] %s existing %s, potential: %s' % (dbname, existing, potential), text="Test run", mail_from="noreply@data.gbif.no")
-    msg.send(to="helpdesk@gbif.no")
     if existing - potential >= 10:
       msg = emails.Message(subject="[gbif.no] reduction in number of multimedia records (%s)" % (dbname), text="Fewer multimedia records in %s from %s to %s." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
       msg.send(to="helpdesk@gbif.no")
