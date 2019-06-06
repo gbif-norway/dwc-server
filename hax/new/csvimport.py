@@ -240,30 +240,30 @@ for raw in reader:
   row['verbatimCoordinates'] = raw.get('verbatimCoordinates')
   row['verbatimSRS'] = raw.get('verbatimSRS')
   row['footprintWKT'] = raw.get('footprintWKT')
-
-  try:
-    if raw['verbatimCoordinateSystem'] == "UTM":
-      utms, utme, utmn = re.split("[, ]", raw['verbatimCoordinates'])
-      row['UTMnord'] = utmn
-      row['UTMsone'] = utms
-      row['UTMost'] = utme
-    elif raw['verbatimCoordinateSystem'] == "MGRS":
-      raw['MGRSfra'] = raw['verbatimCoordinates']
-    elif raw['verbatimCoordinateSystem'] == "decimal degrees":
-      pass
-    elif raw['verbatimCoordinateSystem'] == "degrees minutes seconds":
-      pass
-    elif raw['verbatimCoordinateSystem'] == "Unknown":
-      pass
-    elif raw['verbatimCoordinateSystem'] == "unknown":
-      pass
-    elif raw['verbatimCoordinateSystem'] == "":
-      pass
-    else:
-      pass
-  except Exception as e:
-    print("%s: %s" % (dbname, e))
-    pass
+#
+#  try:
+#    if raw['verbatimCoordinateSystem'] == "UTM":
+#      utms, utme, utmn = re.split("[, ]", raw['verbatimCoordinates'])
+#      row['UTMnord'] = utmn
+#      row['UTMsone'] = utms
+#      row['UTMost'] = utme
+#    elif raw['verbatimCoordinateSystem'] == "MGRS":
+#      raw['MGRSfra'] = raw['verbatimCoordinates']
+#    elif raw['verbatimCoordinateSystem'] == "decimal degrees":
+#      pass
+#    elif raw['verbatimCoordinateSystem'] == "degrees minutes seconds":
+#      pass
+#    elif raw['verbatimCoordinateSystem'] == "Unknown":
+#      pass
+#    elif raw['verbatimCoordinateSystem'] == "unknown":
+#      pass
+#    elif raw['verbatimCoordinateSystem'] == "":
+#      pass
+#    else:
+#      pass
+#  except Exception as e:
+#    print("%s: %s" % (dbname, e))
+#    pass
   connection.execute(work.insert(), row)
 
 hasmain = engine.dialect.has_table(connection, "main")
