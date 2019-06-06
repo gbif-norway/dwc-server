@@ -1,10 +1,13 @@
 #!/usr/bin/python
 # encoding: utf-8
 
+# This file lives in /opt/bin/
+
 import re
 import sys
 import time
 import datetime
+import emails
 
 import unicodecsv
 import sqlalchemy as sql
@@ -18,19 +21,19 @@ engine = sql.create_engine("mysql://root@localhost")
 
 conn = engine.connect()
 conn.execute("commit")
-conn.execute("drop database %s" % dbname)
-
-conn.execute("create database %s" % dbname)
+try:
+  conn.execute("create database %s CHARACTER SET utf8;" % dbname)
+except:
+  pass
 conn.close()
 
-engine = sql.create_engine("mysql://root@localhost/%s"
-    % dbname)
+engine = sql.create_engine("mysql://root@localhost/%s" % dbname)
 metadata = sql.MetaData()
 
-sql.Table('main', metadata).drop(engine, checkfirst=True)
+sql.Table('work', metadata).drop(engine, checkfirst=True)
 
 metadata = sql.MetaData()
-main = sql.Table('main', metadata,
+work = sql.Table('work', metadata,
     sql.Column('DateLastModified', sql.Date),
     sql.Column('InstitutionCode', sql.Unicode(30)),
     sql.Column('CollectionCode', sql.Unicode(30)),
@@ -39,7 +42,7 @@ main = sql.Table('main', metadata,
     sql.Column('BasisOfRecord', sql.Unicode(18)),
     sql.Column('Kingdom', sql.Unicode(10)),
     sql.Column('Phylum', sql.Unicode(20)),
-    sql.Column('Class', sql.Unicode(25)),
+    sql.Column('Class', sql.Unicode(45)),
     sql.Column('Orde_r', sql.Unicode(28)),
     sql.Column('Family', sql.Unicode(25)),
     sql.Column('Genus', sql.Unicode(40)),
@@ -78,11 +81,11 @@ main = sql.Table('main', metadata,
     sql.Column('PreviousCatalogNumber', sql.Unicode(10)),
     sql.Column('RelationshipType', sql.Unicode(10)),
     sql.Column('RelatedCatalogItem', sql.Unicode(10)),
-    sql.Column('Notes', sql.Unicode(3003)),
+    sql.Column('Notes', sql.UnicodeText()),
     sql.Column('CollectingMethod', sql.Unicode(100)),
     sql.Column('IdentificationPrecision', sql.Unicode(10)),
     sql.Column('Okologi', sql.Unicode(2000)),
-    sql.Column('Habitat', sql.Unicode(512)),
+    sql.Column('Habitat', sql.Unicode(3000)),
     sql.Column('Substrat', sql.Unicode(60)),
     sql.Column('UTMsone', sql.Unicode(10)),
     sql.Column('UTMost', sql.Unicode(30)),
@@ -111,7 +114,7 @@ main = sql.Table('main', metadata,
     sql.Column('PolygonID', sql.Unicode(25)),
     sql.Column('RelativeAbundance', sql.Unicode(25)),
     sql.Column('Antropokor', sql.Unicode(25)),
-    sql.Column('URL', sql.Unicode(256)),
+    sql.Column('URL', sql.Unicode(2048)),
 
     sql.Column('PLokalitet', sql.Unicode(25)),
     sql.Column('PLongitude', sql.Unicode(25)),
@@ -121,27 +124,28 @@ main = sql.Table('main', metadata,
     sql.Column('CoordinateRemoved', sql.Unicode(25)),
     sql.Column('GBIF_recordNumber', sql.Unicode(25)),
     sql.Column('GBIF_resourceNumber', sql.Unicode(25)),
-    sql.Column('OccurrenceID', sql.Unicode(64)),
-    sql.Column('AssociatedMedia', sql.Unicode(256)),
+    sql.Column('OccurrenceID', sql.Unicode(128)),
+    sql.Column('associatedMedia', sql.Unicode(2048)),
+    sql.Column('associatedSequences', sql.Unicode(256)),
 
     sql.Column('verbatimElevation', sql.Unicode(60)),
     sql.Column('verbatimDepth', sql.Unicode(60)),
     sql.Column('lifeStage', sql.Unicode(60)),
-    sql.Column('occurrenceRemarks', sql.Unicode(450)),
+    sql.Column('occurrenceRemarks', sql.UnicodeText()),
     sql.Column('identificationQualifier', sql.Unicode(60)),
     sql.Column('georeferenceRemarks', sql.Unicode(60)),
-    sql.Column('datasetName', sql.Unicode(60)),
+    sql.Column('datasetName', sql.Unicode(256)),
     sql.Column('organismID', sql.Unicode(60)),
     sql.Column('verbatimCoordinateSystem', sql.Unicode(60)),
     sql.Column('verbatimCoordinates', sql.Unicode(60)),
     sql.Column('verbatimSRS', sql.Unicode(60)),
+    sql.Column('footprintWKT', sql.Text()),
 
 )
 
 metadata.create_all(engine, checkfirst=True)
 
 connection = engine.connect()
-#connection.set_character_set('utf8')
 connection.execute('SET NAMES utf8;')
 connection.execute('SET CHARACTER SET utf8;')
 connection.execute('SET character_set_connection=utf8;')
@@ -178,7 +182,7 @@ for raw in reader:
     row['MonthIdentified'] = monthid
     row['DayIdentified'] = dayid
   else:
-    row['dateIdentified'] = ""
+    row['dateIdentified'] = u""
 
   row['TypeStatus'] = raw['typeStatus']
   row['CollectorNumber'] = raw['recordNumber']
@@ -201,7 +205,7 @@ for raw in reader:
   row['Longitude'] = raw['decimalLongitude']
   row['Latitude'] = raw['decimalLatitude']
   row['CoordinatePrecision'] = raw['coordinateUncertaintyInMeters']
-  row['BoundingBox'] = ""
+  row['BoundingBox'] = u""
 
   row['MinimumElevation'] = raw['minimumElevationInMeters']
   row['MaximumElevation'] = raw['maximumElevationInMeters']
@@ -211,19 +215,20 @@ for raw in reader:
   row['PreparationType'] = raw['preparations']
   row['IndividualCount'] = raw['individualCount']
   row['PreviousCatalogNumber'] = raw['otherCatalogNumbers']
-  row['RelationshipType'] = ""
-  row['RelatedCatalogItem'] = ""
+  row['RelationshipType'] = u""
+  row['RelatedCatalogItem'] = u""
 
   row['Notes'] = raw['occurrenceRemarks']
   row['CollectingMethod'] = raw['samplingProtocol']
-  row['IdentificationPrecision'] = ""
-  row['Okologi'] = ""
+  row['IdentificationPrecision'] = u""
+  row['Okologi'] = u""
   row['Habitat'] = raw['habitat']
-  row['Substrat'] = ""
+  row['Substrat'] = u""
 
   row['OccurrenceID'] = raw['occurrenceID']
   row['URL'] = raw['associatedMedia']
   row['associatedMedia'] = raw['associatedMedia']
+  row['associatedSequences'] = raw['associatedSequences']
 
   row['verbatimElevation'] = raw['verbatimElevation']
   row['verbatimDepth'] = raw['verbatimDepth']
@@ -234,6 +239,7 @@ for raw in reader:
   row['verbatimCoordinateSystem'] = raw.get('verbatimCoordinateSystem')
   row['verbatimCoordinates'] = raw.get('verbatimCoordinates')
   row['verbatimSRS'] = raw.get('verbatimSRS')
+  row['footprintWKT'] = raw.get('footprintWKT')
 
   try:
     if raw['verbatimCoordinateSystem'] == "UTM":
@@ -255,9 +261,34 @@ for raw in reader:
       pass
     else:
       pass
-  except Exception:
+  except Exception as e:
+    print("%s: %s" % (dbname, e))
     pass
-    # sys.stdout.write("Eh eh %s\n" % raw['verbatimCoordinateSystem'])
+  connection.execute(work.insert(), row)
 
-  connection.execute(main.insert(), row)
+hasmain = engine.dialect.has_table(connection, "main")
+
+if hasmain:
+  existing = connection.execute("SELECT count(*) FROM main").fetchone()[0]
+  potential = connection.execute("SELECT count(*) FROM work").fetchone()[0]
+  if existing - potential >= 10:
+    msg = emails.Message(subject="[gbif.no] reduksjon i antall poster (%s)" % dbname, text="Færre poster i %s enn ved forrige publisering!\nFra %s til %s.\nFortsetter som normalt." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
+    msg.send(to="christian.svindseth@nhm.uio.no")
+    msg.send(to="gbif-drift@nhm.uio.no")
+    msg.send(to="b.p.lofall@nhm.uio.no")
+  if (existing / 2) > potential:
+    msg = emails.Message(subject="[gbif.no] voldsom reduksjon i antall poster (%s)" % dbname, text="Færre poster i %s enn ved forrige publisering!\nFra %s til %s.\nAvbryter dataimport." % (dbname, existing, potential), mail_from="noreply@data.gbif.no")
+    msg.send(to="christian.svindseth@nhm.uio.no")
+    msg.send(to="gbif-drift@nhm.uio.no")
+    msg.send(to="b.p.lofall@nhm.uio.no")
+    sys.exit()
+
+transaction = connection.begin()
+try:
+  if hasmain: connection.execute("DROP TABLE main")
+  connection.execute("RENAME TABLE work TO main")
+  transaction.commit()
+except:
+  transaction.rollback()
+  raise
 
