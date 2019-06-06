@@ -176,7 +176,7 @@ for raw in reader:
   row['ScientificNameAuthor'] = raw['scientificNameAuthorship']
 
   row['IdentifiedBy'] = raw['identifiedBy']
-  if raw['dateIdentified'].find("-") >= 0:
+  if raw['dateIdentified'].find("-") == 3:
     yearid, monthid, dayid = raw['dateIdentified'].split('-')
     row['YearIdentified'] = yearid
     row['MonthIdentified'] = monthid
