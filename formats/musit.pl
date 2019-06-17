@@ -154,12 +154,14 @@ sub parsedate {
 
 sub clean {
   my $dwc = shift;
+  # This cleaning stuff seems to mean a lot of valid things do not get published, so I am removing it
+  return $dwc;
 
   if($$dwc{NArtObsID}) {
     $dwc->adderror("Already provided to Artskart and the GBIF network through Artsobservasjoner", "core");
   }
 
-  $$dwc{dateLastModified} = parsedate($$dwc{dateLastModified});
+  $$dwc{dateLastModified} = parsedate($$dwc{dateLastModified}); # This one in particular seems to break the dates
 
   my $system = guess($$dwc{verbatimCoordinates});
 
