@@ -99,6 +99,9 @@ sub parsedate {
 sub clean {
   my $dwc = shift;
 
+  # This cleaning stuff seems to mean a lot of valid things do not get published, so I am removing it
+  return $dwc;
+
   if($$dwc{eventDate} && $$dwc{eventDate} =~ /\-/) {
     my ($y, $m, $d) = split /-/, $$dwc{eventDate};
     $$dwc{year} = $y if $y != 0;

@@ -161,7 +161,7 @@ sub clean {
     $dwc->adderror("Already provided to Artskart and the GBIF network through Artsobservasjoner", "core");
   }
 
-  $$dwc{dateLastModified} = parsedate($$dwc{dateLastModified}); # This one in particular seems to break the dates
+  $$dwc{dateLastModified} = parsedate($$dwc{dateLastModified}); 
 
   my $system = guess($$dwc{verbatimCoordinates});
 

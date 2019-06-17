@@ -92,7 +92,7 @@ while (my $raw = $csv->fetch) {
   $$dwc{institutionCode} = $opt_i if($opt_i);
   $$dwc{collectionCode} = $opt_c if($opt_c);
   $$dwc{catalogNumber} = $nn++ if($opt_m);
-  $$dwc{modified} = $opt_d if($opt_d);
+  # $$dwc{modified} = $opt_d if($opt_d);
 
   if($opt_o) {
     $$dwc{occurrenceID} = "urn:uuid:" . create_uuid_as_string(UUID_V4);
