@@ -34,7 +34,7 @@ sql.Table('work', metadata).drop(engine, checkfirst=True)
 
 metadata = sql.MetaData()
 work = sql.Table('work', metadata,
-    sql.Column('DateLastModified', sql.Date),
+    sql.Column('Modified', sql.Unicode(15)),
     sql.Column('InstitutionCode', sql.Unicode(30)),
     sql.Column('CollectionCode', sql.Unicode(30)),
     sql.Column('CatalogNumber', sql.Unicode(45)),
@@ -50,9 +50,7 @@ work = sql.Table('work', metadata,
     sql.Column('Subspecies', sql.Unicode(36)),
     sql.Column('ScientificNameAuthor', sql.Unicode(100)),
     sql.Column('IdentifiedBy', sql.Unicode(300)),
-    sql.Column('YearIdentified', sql.Unicode(10)),
-    sql.Column('MonthIdentified', sql.Unicode(10)),
-    sql.Column('DayIdentified', sql.Unicode(10)),
+    sql.Column('DateIdentified', sql.Unicode(20)),
     sql.Column('TypeStatus', sql.Unicode(20)),
     sql.Column('CollectorNumber', sql.Unicode(60)),
     sql.Column('FieldNumber', sql.Unicode(32)),
@@ -84,7 +82,6 @@ work = sql.Table('work', metadata,
     sql.Column('Notes', sql.UnicodeText()),
     sql.Column('CollectingMethod', sql.Unicode(100)),
     sql.Column('IdentificationPrecision', sql.Unicode(10)),
-    sql.Column('Okologi', sql.Unicode(2000)),
     sql.Column('Habitat', sql.Unicode(3000)),
     sql.Column('Substrat', sql.Unicode(60)),
     sql.Column('UTMsone', sql.Unicode(10)),
@@ -153,11 +150,7 @@ connection.execute('SET character_set_connection=utf8;')
 reader = unicodecsv.DictReader(sys.stdin, delimiter='\t')
 for raw in reader:
   row = {}
-  try:
-    modified = datetime.datetime.strptime(raw['modified'], "%Y-%m-%d")
-  except:
-    modified = None
-  row['DateLastModified'] = modified
+  row['Modified'] = raw['modified']
   row['InstitutionCode'] = raw['institutionCode']
   row['CollectionCode'] = raw['collectionCode']
   row['CatalogNumber'] = raw['catalogNumber']
@@ -176,14 +169,7 @@ for raw in reader:
   row['ScientificNameAuthor'] = raw['scientificNameAuthorship']
 
   row['IdentifiedBy'] = raw['identifiedBy']
-  if raw['dateIdentified'].find("-") == 3:
-    yearid, monthid, dayid = raw['dateIdentified'].split('-')
-    row['YearIdentified'] = yearid
-    row['MonthIdentified'] = monthid
-    row['DayIdentified'] = dayid
-  else:
-    row['dateIdentified'] = u""
-
+  row['DateIdentified'] = raw['dateIdentified']
   row['TypeStatus'] = raw['typeStatus']
   row['CollectorNumber'] = raw['recordNumber']
   row['FieldNumber'] = raw['fieldNumber']
@@ -221,7 +207,6 @@ for raw in reader:
   row['Notes'] = raw['occurrenceRemarks']
   row['CollectingMethod'] = raw['samplingProtocol']
   row['IdentificationPrecision'] = u""
-  row['Okologi'] = u""
   row['Habitat'] = raw['habitat']
   row['Substrat'] = u""
 
@@ -240,30 +225,6 @@ for raw in reader:
   row['verbatimCoordinates'] = raw.get('verbatimCoordinates')
   row['verbatimSRS'] = raw.get('verbatimSRS')
   row['footprintWKT'] = raw.get('footprintWKT')
-#
-#  try:
-#    if raw['verbatimCoordinateSystem'] == "UTM":
-#      utms, utme, utmn = re.split("[, ]", raw['verbatimCoordinates'])
-#      row['UTMnord'] = utmn
-#      row['UTMsone'] = utms
-#      row['UTMost'] = utme
-#    elif raw['verbatimCoordinateSystem'] == "MGRS":
-#      raw['MGRSfra'] = raw['verbatimCoordinates']
-#    elif raw['verbatimCoordinateSystem'] == "decimal degrees":
-#      pass
-#    elif raw['verbatimCoordinateSystem'] == "degrees minutes seconds":
-#      pass
-#    elif raw['verbatimCoordinateSystem'] == "Unknown":
-#      pass
-#    elif raw['verbatimCoordinateSystem'] == "unknown":
-#      pass
-#    elif raw['verbatimCoordinateSystem'] == "":
-#      pass
-#    else:
-#      pass
-#  except Exception as e:
-#    print("%s: %s" % (dbname, e))
-#    pass
   connection.execute(work.insert(), row)
 
 hasmain = engine.dialect.has_table(connection, "main")
