@@ -117,7 +117,7 @@ sub clean {
     $dwc->log("error", "Already provided to Artskart and the GBIF network through Artsobservasjoner", "core");
   }
 
-  $$dwc{'dcterms:modified'} = parsedate($$dwc{'dcterms:modified'});
+  #$$dwc{'dcterms:modified'} = parsedate($$dwc{'dcterms:modified'});
   $$dwc{_mediaLicense} = $$dwc{CreativeCommonsLicense};
 
   # Added by Rukaya to try and fix "dropped" geographic points
