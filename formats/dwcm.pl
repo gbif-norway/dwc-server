@@ -99,15 +99,18 @@ sub parsedate {
 sub clean {
   my $dwc = shift;
 
-  # This cleaning stuff seems to mean a lot of valid things do not get published, so I am removing it
-  return $dwc;
-
   if($$dwc{eventDate} && $$dwc{eventDate} =~ /\-/) {
     my ($y, $m, $d) = split /-/, $$dwc{eventDate};
     $$dwc{year} = $y if $y != 0;
     $$dwc{month} = $m if $m != 0;
     $$dwc{day} = $d if $d != 0;
   }
+
+  $$dwc{_mediaLicense} = $$dwc{CreativeCommonsLicense};
+
+  # This cleaning stuff seems to mean a lot of valid things do not get published, so I am removing it
+  return $dwc;
+
   if($$dwc{dateIdentified}
     && $$dwc{dateIdentified} =~ /\-/) {
     my ($y, $m, $d) = split /-/, $$dwc{dateIdentified};
@@ -121,7 +124,6 @@ sub clean {
   }
 
   #$$dwc{'dcterms:modified'} = parsedate($$dwc{'dcterms:modified'});
-  $$dwc{_mediaLicense} = $$dwc{CreativeCommonsLicense};
 
   # Added by Rukaya to try and fix "dropped" geographic points
   if($$dwc{'decimalLatitude'} ne "" && $$dwc{'decimalLongitude'} ne "") { 
